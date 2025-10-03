@@ -23,7 +23,9 @@ const Banner: React.FC = () => {
       <div className="banner-content">
         <div className="banner-logo">
           {/* Logo placeholder - will be replaced */}
-          <h1>pgx-lower {version && <span className="version">v{version}</span>}</h1>
+          <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <h1>pgx-lower {version && <span className="version">v{version}</span>}</h1>
+          </Link>
         </div>
         <div className="banner-links">
           <Link to="/">About</Link>
