@@ -131,6 +131,7 @@ const QueryPage: React.FC = () => {
                 minimap: { enabled: false },
                 fontSize: 15,
                 automaticLayout: true,
+                fontFamily: "'Source Code Pro', 'Courier New', monospace",
               }}
             />
           </div>

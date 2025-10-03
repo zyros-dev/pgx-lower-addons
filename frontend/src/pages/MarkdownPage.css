@@ -13,38 +13,38 @@
 }
 
 .markdown-content h1 {
-  color: #1e3a5f;
-  border-bottom: 3px solid #3182ce;
+  color: var(--black);
+  border-bottom: 3px solid var(--separator);
   padding-bottom: 0.75rem;
   margin-bottom: 1.5rem;
   font-weight: 700;
 }
 
 .markdown-content h2 {
-  color: #1e3a5f;
+  color: var(--black);
   margin-top: 2.5rem;
   margin-bottom: 1rem;
   font-weight: 600;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--separator);
   padding-bottom: 0.5rem;
 }
 
 .markdown-content h3 {
-  color: #2c5282;
+  color: var(--black);
   margin-top: 2rem;
   margin-bottom: 0.75rem;
   font-weight: 600;
 }
 
 .markdown-content p {
-  color: #2d3748;
+  color: var(--text-primary);
   margin: 1rem 0;
 }
 
 .markdown-content ul, .markdown-content ol {
   margin: 1rem 0;
   padding-left: 2rem;
-  color: #2d3748;
+  color: var(--text-primary);
 }
 
 .markdown-content li {
@@ -52,11 +52,11 @@
 }
 
 .markdown-content code {
-  background-color: #edf2f7;
-  color: #2c5282;
+  background-color: var(--background-light);
+  color: var(--primary);
   padding: 0.2rem 0.5rem;
   border-radius: 3px;
-  font-family: 'Courier New', monospace;
+  font-family: 'Source Code Pro', 'Courier New', monospace;
   font-size: 0.9em;
 }
 
@@ -65,7 +65,7 @@
   border-radius: 6px;
   overflow-x: auto;
   margin: 1.5rem 0;
-  border: 1px solid #cbd5e0;
+  border: 1px solid var(--border);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -84,7 +84,7 @@
 }
 
 .markdown-content a {
-  color: #3182ce;
+  color: var(--primary);
   text-decoration: none;
 }
 
@@ -93,10 +93,10 @@
 }
 
 .markdown-content blockquote {
-  border-left: 4px solid #3182ce;
+  border-left: 4px solid var(--primary);
   padding-left: 1rem;
   margin-left: 0;
   margin-bottom: 1rem;
-  color: #4a5568;
+  color: var(--text-secondary);
   font-style: italic;
 }

@@ -1,0 +1,22 @@
+/* Color Theme Variables */
+:root {
+  /* Purple colors */
+  --banner-bg: #2e1065;
+  --primary-dark: #4c1d95;
+  --primary: #6b21a8;
+  --primary-light: #7e22ce;
+  --separator: #8b5cf6;
+
+  /* Neutral colors */
+  --text-primary: #2d3748;
+  --text-secondary: #4a5568;
+  --text-muted: #718096;
+  --border: #cbd5e0;
+  --background: #f7fafc;
+  --background-light: #edf2f7;
+  --white: #ffffff;
+  --black: #000000;
+
+  /* State colors */
+  --hover-bg: #e2e8f0;
+}

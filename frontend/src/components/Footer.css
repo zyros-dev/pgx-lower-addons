@@ -1,6 +1,5 @@
 .footer {
-  background-color: #1e3a5f;
-  border-top: 3px solid #2c5282;
+  background-color: var(--banner-bg);
   margin-top: auto;
   padding: 2rem;
 }
@@ -19,17 +18,17 @@
 }
 
 .footer-links a {
-  color: #e2e8f0;
+  color: var(--white);
   text-decoration: none;
   font-size: 0.9rem;
   transition: color 0.3s;
 }
 
 .footer-links a:hover {
-  color: #ffffff;
+  color: var(--separator);
 }
 
 .footer-links .separator {
-  color: #4a5568;
+  color: var(--separator);
   font-size: 0.9rem;
 }

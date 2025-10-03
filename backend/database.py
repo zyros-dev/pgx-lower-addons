@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 DB_PATH = Path(__file__).parent / "database" / "pgx_lower.db"
+VERSION = "0.1.0"
 
 async def init_db():
     async with aiosqlite.connect(DB_PATH) as db:
@@ -12,6 +13,7 @@ async def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 ip_address TEXT NOT NULL,
                 request_id TEXT NOT NULL,
+                version TEXT NOT NULL,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """)
@@ -29,8 +31,8 @@ async def init_db():
 async def log_user_request(ip_address: str, request_id: str):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
-            "INSERT INTO user_requests (ip_address, request_id) VALUES (?, ?)",
-            (ip_address, request_id)
+            "INSERT INTO user_requests (ip_address, request_id, version) VALUES (?, ?, ?)",
+            (ip_address, request_id, VERSION)
         )
         await db.commit()
 

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 import hashlib
 import json
 from pathlib import Path
-from database import init_db, log_user_request, get_cached_query, cache_query
+from database import init_db, log_user_request, get_cached_query, cache_query, VERSION
 from logger import logger
 
 CONTENT_DIR = Path(__file__).parent.parent / "content"
@@ -40,6 +40,10 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+@app.get("/version")
+async def get_version():
+    return {"version": VERSION}
 
 @app.get("/content/{filename}")
 async def get_content(filename: str):
