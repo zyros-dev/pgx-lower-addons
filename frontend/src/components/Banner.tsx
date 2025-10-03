@@ -12,6 +12,7 @@ const Banner: React.FC = () => {
         </div>
         <div className="banner-links">
           <Link to="/">About</Link>
+          <Link to="/blog">Blog</Link>
           <Link to="/query">Query</Link>
         </div>
       </div>

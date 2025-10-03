@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/tokyo-night-light.css';
-import './DocsPage.css';
+import './MarkdownPage.css';
 
 const DocsPage: React.FC = () => {
   const [markdown, setMarkdown] = useState<string>('# Documentation\n\nLoading...');
@@ -21,8 +21,8 @@ const DocsPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="docs-page">
-      <div className="docs-content">
+    <div className="markdown-page">
+      <div className="markdown-content">
         <ReactMarkdown
           rehypePlugins={[rehypeHighlight]}
           components={{

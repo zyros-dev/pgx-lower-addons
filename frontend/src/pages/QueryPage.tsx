@@ -11,6 +11,7 @@ interface Output {
 
 interface DatabaseResult {
   database: string;
+  version: string;
   latency_ms: number;
   outputs: Output[];
 }
@@ -173,11 +174,15 @@ const QueryPage: React.FC = () => {
                   className="database-header"
                   onClick={() => toggleDatabase(dbResult.database)}
                 >
-                  <span className="database-name">{dbResult.database}</span>
-                  <span className="database-latency">{dbResult.latency_ms}ms</span>
-                  <span className="collapse-icon">
-                    {expandedDatabases.has(dbResult.database) ? '▼' : '▶'}
-                  </span>
+                  <div>
+                    <span className="database-name">{dbResult.database} | {dbResult.version}</span>
+                  </div>
+                  <div>
+                    <span className="database-latency">{dbResult.latency_ms}ms</span>
+                    <span className="collapse-icon">
+                      {expandedDatabases.has(dbResult.database) ? '▼' : '▶'}
+                    </span>
+                  </div>
                 </div>
                 {expandedDatabases.has(dbResult.database) && (
                   <div className="database-outputs">

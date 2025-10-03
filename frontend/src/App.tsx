@@ -4,6 +4,7 @@ import Banner from './components/Banner';
 import Footer from './components/Footer';
 import QueryPage from './pages/QueryPage';
 import DocsPage from './pages/DocsPage';
+import Blog from './pages/Blog';
 import './App.css';
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
         <Routes>
           <Route path="/" element={<DocsPage />} />
           <Route path="/query" element={<QueryPage />} />
+          <Route path="/blog" element={<Blog />} />
         </Routes>
         <Footer />
       </div>

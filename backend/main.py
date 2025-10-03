@@ -132,6 +132,7 @@ async def execute_query(query_request: QueryRequest, request: Request):
             "results": [
                 {
                     "database": "postgres",
+                    "version": "PostgreSQL 16.3",
                     "latency_ms": 45.2,
                     "outputs": [
                         {
@@ -147,6 +148,7 @@ async def execute_query(query_request: QueryRequest, request: Request):
                 },
                 {
                     "database": "pgx-lower",
+                    "version": "pgx-lower 0.1.0 (PostgreSQL 16.3)",
                     "latency_ms": 23.1,
                     "outputs": [
                         {
