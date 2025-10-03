@@ -1,4 +1,4 @@
-.PHONY: help serve frontend backend clean install report
+.PHONY: help serve clean install report
 
 help:
 	@echo "pgx-lower-addons Makefile"
@@ -19,7 +19,7 @@ install:
 
 serve:
 	@echo "Starting frontend and backend..."
-	@make -j2 frontend backend
+	@(cd frontend && npm start) & (cd backend && ./venv/bin/python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000)
 
 clean:
 	rm -rf frontend/node_modules frontend/dist frontend/build frontend/.next
