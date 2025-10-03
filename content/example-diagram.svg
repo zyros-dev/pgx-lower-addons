@@ -1,0 +1,5 @@
+<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="400" fill="#3182ce"/>
+  <text x="400" y="180" font-family="Arial, sans-serif" font-size="48" fill="white" text-anchor="middle">Example Architecture</text>
+  <text x="400" y="240" font-family="Arial, sans-serif" font-size="32" fill="#e2e8f0" text-anchor="middle">pgx-lower System Diagram</text>
+</svg>

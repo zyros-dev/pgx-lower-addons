@@ -1,0 +1,263 @@
+.query-page {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 2rem;
+}
+
+/* TPC-H Buttons Container */
+.tpch-buttons-container {
+  margin-bottom: 1.5rem;
+}
+
+.tpch-label {
+  display: block;
+  color: #2c5282;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+}
+
+.tpch-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tpch-btn {
+  padding: 0.5rem 1rem;
+  background-color: #3182ce;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: background-color 0.3s;
+  min-width: 50px;
+}
+
+.tpch-btn:hover {
+  background-color: #2c5282;
+}
+
+/* Editor Section */
+.editor-section {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.editor-section h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #1e3a5f;
+  font-weight: 600;
+}
+
+.editor-section .monaco-editor-container {
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.editor-section .monaco-editor-wrapper {
+  overflow: hidden;
+}
+
+.editor-section .resize-handle {
+  height: 6px;
+  background-color: #cbd5e0;
+  cursor: ns-resize;
+  transition: background-color 0.2s;
+}
+
+.editor-section .resize-handle:hover {
+  background-color: #3182ce;
+}
+
+.editor-actions {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.execute-btn {
+  padding: 0.75rem 2rem;
+  background-color: #1e3a5f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+}
+
+.execute-btn:hover:not(:disabled) {
+  background-color: #2c5282;
+}
+
+.execute-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.resize-hint {
+  color: #718096;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* Main Display Section */
+.main-display-section {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.main-display-section h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #1e3a5f;
+  font-weight: 600;
+}
+
+.resizable-textarea-container {
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.resizable-textarea-container .resize-handle {
+  height: 6px;
+  background-color: #cbd5e0;
+  cursor: ns-resize;
+  transition: background-color 0.2s;
+}
+
+.resizable-textarea-container .resize-handle:hover {
+  background-color: #3182ce;
+}
+
+.main-display-box {
+  width: 100%;
+  padding: 1rem;
+  border: none;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  resize: none;
+  background-color: #f7fafc;
+}
+
+/* Database Results Section */
+.database-results-section {
+  margin-bottom: 2rem;
+}
+
+.database-result {
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.database-header {
+  padding: 1rem 1.5rem;
+  background-color: #edf2f7;
+  border-bottom: 1px solid #cbd5e0;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.database-header:hover {
+  background-color: #e2e8f0;
+}
+
+.database-name {
+  font-weight: 600;
+  color: #1e3a5f;
+  font-size: 1.1rem;
+}
+
+.database-latency {
+  color: #2c5282;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.collapse-icon {
+  color: #4a5568;
+  font-size: 0.8rem;
+}
+
+.database-outputs {
+  padding: 1.5rem;
+}
+
+.output-block {
+  margin-bottom: 1.5rem;
+}
+
+.output-block:last-child {
+  margin-bottom: 0;
+}
+
+.output-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.output-title {
+  font-weight: 600;
+  color: #2c5282;
+  font-size: 1rem;
+}
+
+.output-latency {
+  color: #4a5568;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.output-content {
+  width: 100%;
+  padding: 1rem;
+  border: none;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  resize: none;
+  background-color: #f7fafc;
+}
+
+/* Performance Dashboard */
+.performance-dashboard-section {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.performance-dashboard-section h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #1e3a5f;
+  font-weight: 600;
+}
+
+.placeholder-text {
+  color: #718096;
+  font-style: italic;
+}
