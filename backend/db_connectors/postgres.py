@@ -5,7 +5,7 @@ from .base import DatabaseConnector, QueryOutput
 class PostgresConnector(DatabaseConnector):
     """PostgreSQL database connector."""
 
-    def __init__(self, host: str = "localhost", port: int = 5433,
+    def __init__(self, host: str = "postgres", port: int = 5432,
                  user: str = "pgxuser", password: str = "pgxpassword",
                  database: str = "pgxdb"):
         super().__init__(
@@ -67,7 +67,7 @@ class PostgresConnector(DatabaseConnector):
         outputs.append(QueryOutput(
             title="Query Plan (EXPLAIN ANALYZE)",
             content=analyze_content,
-            latency_ms=round(analyze_latency, 2)
+            latency_ms=None  # Don't include EXPLAIN time in total
         ))
 
         # Then execute the actual SELECT for clean timing
@@ -77,12 +77,13 @@ class PostgresConnector(DatabaseConnector):
 
         # Format results as table
         if results:
-            columns = results[0].keys()
+            columns = list(results[0].keys())
             table_lines = [" | ".join(columns)]
             table_lines.append("-" * len(table_lines[0]))
 
             for row in results:
-                table_lines.append(" | ".join(str(row[col]) for col in columns))
+                row_values = [str(row[col]) if row[col] is not None else "NULL" for col in columns]
+                table_lines.append(" | ".join(row_values))
 
             content = "\n".join(table_lines)
         else:

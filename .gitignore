@@ -58,3 +58,4 @@ yarn-error.log*
 .env
 .env.local
 backend/database/pgx_lower.db
+data/database/pgx_lower.db

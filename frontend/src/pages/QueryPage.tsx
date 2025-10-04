@@ -30,6 +30,14 @@ const QueryPage: React.FC = () => {
   const [mainDisplayHeight, setMainDisplayHeight] = useState<number>(100);
   const [outputHeights, setOutputHeights] = useState<{[key: string]: number}>({});
 
+  // Calculate height based on content, max 100 lines, +3 rows for padding
+  const calculateHeight = (content: string, lineHeight: number = 20) => {
+    const lines = content.split('\n').length;
+    const maxLines = 100;
+    const actualLines = Math.min(lines + 3, maxLines);
+    return actualLines * lineHeight;
+  };
+
   const handleEditorWillMount = (monaco: any) => {
     monaco.editor.defineTheme('github-light', githubLight);
   };
@@ -158,11 +166,12 @@ const QueryPage: React.FC = () => {
                 className="main-display-box"
                 value={result.main_display}
                 readOnly
-                style={{ height: `${mainDisplayHeight}px` }}
+                wrap="off"
+                style={{ height: `${mainDisplayHeight || calculateHeight(result.main_display)}px` }}
               />
               <div
                 className="resize-handle"
-                onMouseDown={createResizeHandler(setMainDisplayHeight, mainDisplayHeight)}
+                onMouseDown={createResizeHandler(setMainDisplayHeight, mainDisplayHeight || calculateHeight(result.main_display))}
               />
             </div>
           </div>
@@ -189,7 +198,8 @@ const QueryPage: React.FC = () => {
                   <div className="database-outputs">
                     {dbResult.outputs.map((output, outIdx) => {
                       const outputKey = `${dbResult.database}-${outIdx}`;
-                      const outputHeight = outputHeights[outputKey] || 120;
+                      const defaultHeight = calculateHeight(output.content);
+                      const outputHeight = outputHeights[outputKey] || defaultHeight;
 
                       return (
                         <div key={outIdx} className="output-block">
@@ -204,6 +214,7 @@ const QueryPage: React.FC = () => {
                               className="output-content"
                               value={output.content}
                               readOnly
+                              wrap="off"
                               style={{ height: `${outputHeight}px` }}
                             />
                             <div

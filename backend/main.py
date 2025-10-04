@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 from database import init_db, log_user_request, get_cached_query, cache_query, VERSION
 from logger import logger
+from db_connectors.postgres import PostgresConnector
 
 CONTENT_DIR = Path(__file__).parent / "content"
 REPORT_DIR = Path(__file__).parent / "pgx-lower-report"
@@ -27,11 +28,17 @@ app.add_middleware(
 class QueryRequest(BaseModel):
     query: str
 
+postgres_connector = PostgresConnector()
+
 @app.on_event("startup")
 async def startup():
     logger.info("Starting pgx-lower API")
     await init_db()
     logger.info("Database initialized")
+
+    # Connect to postgres
+    await postgres_connector.connect()
+    logger.info("Connected to PostgreSQL")
 
 @app.get("/")
 async def root():
@@ -122,44 +129,32 @@ async def execute_query(query_request: QueryRequest, request: Request):
     try:
         await log_user_request(ip_address, request_id)
 
-        cached_result = await get_cached_query(request_id)
+        # cached_result = await get_cached_query(request_id)
+        cached_result = None
         if cached_result:
             logger.info(f"Cache hit for request_id: {request_id}")
             return {"cached": True, "result": cached_result}
 
         logger.info(f"Cache miss for request_id: {request_id}, executing query")
 
-        # TODO: Execute query against actual database
-        # For now, return dummy result with new format
+        # Execute query against postgres
+        postgres_result = await postgres_connector.run(query_request.query)
+
+        # Format result
         result = {
-            "main_display": "Query executed successfully. Results shown below.",
+            "main_display": f"Query executed successfully against {postgres_result.database}.",
             "results": [
                 {
-                    "database": "postgres",
-                    "version": "PostgreSQL 16.3",
-                    "latency_ms": 45.2,
+                    "database": postgres_result.database,
+                    "version": postgres_result.version,
+                    "latency_ms": postgres_result.latency_ms,
                     "outputs": [
                         {
-                            "title": "Query Results",
-                            "content": "id | value\n1  | dummy\n2  | data",
-                            "latency_ms": 12.3
-                        },
-                        {
-                            "title": "Query Plan",
-                            "content": "Seq Scan on table\n  Filter: (condition)\n  Rows: 2"
+                            "title": output.title,
+                            "content": output.content,
+                            "latency_ms": output.latency_ms
                         }
-                    ]
-                },
-                {
-                    "database": "pgx-lower",
-                    "version": "pgx-lower 0.1.0 (PostgreSQL 16.3)",
-                    "latency_ms": 23.1,
-                    "outputs": [
-                        {
-                            "title": "Optimized Results",
-                            "content": "id | value\n1  | dummy\n2  | data",
-                            "latency_ms": 8.7
-                        }
+                        for output in postgres_result.outputs
                     ]
                 }
             ]

@@ -12,6 +12,12 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./resources/init_tpch.sql:/docker-entrypoint-initdb.d/init_tpch.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pgxuser -d pgxdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - pgx-network
 
@@ -29,7 +35,8 @@ services:
       - DATABASE_PATH=/data/database/pgx_lower.db
       - LOG_PATH=/data/logs
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - pgx-network
 

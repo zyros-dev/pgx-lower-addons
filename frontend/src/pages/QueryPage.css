@@ -153,6 +153,9 @@
   font-size: 0.9rem;
   resize: none;
   background-color: #f7fafc;
+  overflow-x: auto;
+  overflow-y: auto;
+  white-space: pre;
 }
 
 /* Database Results Section */
@@ -240,6 +243,9 @@
   font-size: 0.85rem;
   resize: none;
   background-color: #f7fafc;
+  overflow-x: auto;
+  overflow-y: auto;
+  white-space: pre;
 }
 
 /* Performance Dashboard */

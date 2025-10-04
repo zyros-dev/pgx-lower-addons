@@ -102,16 +102,11 @@ class DatabaseConnector(ABC):
         if not self.validate_readonly_query(query):
             raise ValueError("Query contains write operations and is not allowed")
 
-        start_time = datetime.now()
-
         # Execute with lock and timeout
-        async def execute():
-            return await self._execute_query(query)
+        outputs = await self.query_lock.execute_with_lock(self._execute_query(query))
 
-        outputs = await self.query_lock.execute_with_lock(execute)
-
-        end_time = datetime.now()
-        latency_ms = (end_time - start_time).total_seconds() * 1000
+        # Sum only non-None latencies from outputs (excludes EXPLAIN ANALYZE)
+        latency_ms = sum(output.latency_ms for output in outputs if output.latency_ms is not None)
 
         version = await self.get_version()
 
