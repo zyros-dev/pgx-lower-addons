@@ -20,8 +20,8 @@ install:
 serve:
 	@echo "Stopping any running containers..."
 	@docker-compose down
-	@echo "Starting Docker containers..."
-	@docker-compose up -d
+	@echo "Building and starting Docker containers..."
+	@docker-compose up -d --build
 
 clean:
 	rm -rf frontend/node_modules frontend/dist frontend/build frontend/.next

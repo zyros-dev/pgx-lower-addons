@@ -8,17 +8,17 @@ from pathlib import Path
 from database import init_db, log_user_request, get_cached_query, cache_query, VERSION
 from logger import logger
 
-CONTENT_DIR = Path(__file__).parent.parent / "content"
-REPORT_DIR = Path(__file__).parent.parent / "pgx-lower-report"
-SLIDES_DIR = Path(__file__).parent.parent / "slides"
-RESOURCES_DIR = Path(__file__).parent.parent / "resources"
+CONTENT_DIR = Path(__file__).parent / "content"
+REPORT_DIR = Path(__file__).parent / "pgx-lower-report"
+SLIDES_DIR = Path(__file__).parent / "slides"
+RESOURCES_DIR = Path(__file__).parent / "resources"
 
 app = FastAPI(title="pgx-lower API")
 
 # CORS for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://localhost"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
