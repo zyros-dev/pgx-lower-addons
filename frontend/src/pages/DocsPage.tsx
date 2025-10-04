@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
+import remarkGfm from 'remark-gfm';
 import 'highlight.js/styles/tokyo-night-light.css';
 import './MarkdownPage.css';
 
@@ -29,7 +30,7 @@ const DocsPage: React.FC = () => {
             img: ({ node, ...props }) => (
               <img
                 {...props}
-                src={`http://localhost:8000/content/${props.src}`}
+                src={props.src?.startsWith('data:') || props.src?.startsWith('http') ? props.src : `http://localhost:8000/content/${props.src}`}
                 alt={props.alt || ''}
               />
             ),
