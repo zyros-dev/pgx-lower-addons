@@ -28,7 +28,6 @@ async def init_db():
             )
         """)
 
-        # Query execution log for performance tracking
         await db.execute("""
             CREATE TABLE IF NOT EXISTS query_log (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -50,7 +49,6 @@ async def init_db():
             ON query_log(database)
         """)
 
-        # Hourly materialized performance stats
         await db.execute("""
             CREATE TABLE IF NOT EXISTS performance_stats (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -101,7 +99,6 @@ async def cache_query(request_id: str, input_json: str, output_json: str):
         await db.commit()
 
 async def log_query_execution(query: str, database: str, latency_ms: float):
-    """Log query execution for performance tracking."""
     query_hash = hashlib.sha256(query.strip().encode()).hexdigest()
 
     async with aiosqlite.connect(DB_PATH) as db:
@@ -112,21 +109,15 @@ async def log_query_execution(query: str, database: str, latency_ms: float):
         await db.commit()
 
 async def compute_hourly_stats():
-    """
-    Compute hourly performance statistics using stream-based percentile calculation.
-    This avoids loading all data into RAM.
-    """
     from logger import logger
 
     async with aiosqlite.connect(DB_PATH) as db:
-        # Get the latest hour we've computed stats for
         async with db.execute(
             "SELECT MAX(hour_bucket) FROM performance_stats"
         ) as cursor:
             row = await cursor.fetchone()
             last_computed = row[0] if row[0] else "1970-01-01 00:00:00"
 
-        # Find all hour buckets we need to compute
         async with db.execute("""
             SELECT DISTINCT
                 datetime(strftime('%Y-%m-%d %H:00:00', timestamp)) as hour_bucket,
@@ -141,7 +132,6 @@ async def compute_hourly_stats():
         logger.info(f"Computing stats for {len(buckets)} hour buckets")
 
         for hour_bucket, database in buckets:
-            # Get all latencies for this bucket using streaming (ORDER BY allows efficient percentile calc)
             async with db.execute("""
                 SELECT latency_ms
                 FROM query_log
@@ -158,7 +148,6 @@ async def compute_hourly_stats():
 
             n = len(latencies)
 
-            # Calculate percentiles (data is already sorted)
             def percentile(data, p):
                 k = (len(data) - 1) * p
                 f = int(k)
@@ -167,7 +156,6 @@ async def compute_hourly_stats():
                     return data[f] * (1 - c) + data[f + 1] * c
                 return data[f]
 
-            # Count unique queries
             async with db.execute("""
                 SELECT COUNT(DISTINCT query_hash)
                 FROM query_log
@@ -191,7 +179,6 @@ async def compute_hourly_stats():
                 "mean_latency_ms": sum(latencies) / n,
             }
 
-            # Insert stats
             await db.execute("""
                 INSERT OR REPLACE INTO performance_stats
                 (database, hour_bucket, query_count, unique_queries,
@@ -210,7 +197,6 @@ async def compute_hourly_stats():
         await db.commit()
 
 async def get_performance_stats(limit: int = 24):
-    """Get the most recent performance statistics."""
     async with aiosqlite.connect(DB_PATH) as db:
         async with db.execute("""
             SELECT database, hour_bucket, query_count, unique_queries,

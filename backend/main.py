@@ -19,7 +19,6 @@ RESOURCES_DIR = Path(__file__).parent / "resources"
 
 app = FastAPI(title="pgx-lower API")
 
-# CORS for frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://localhost"],
@@ -45,19 +44,12 @@ async def startup():
     await init_db()
     logger.info("Database initialized")
 
-    # Initialize debug module
     debug.init_debug()
-
-    # Connect to postgres
     await postgres_connector.connect()
     logger.info("Connected to PostgreSQL")
-
-    # Start scheduler for hourly stats computation
     scheduler.add_job(compute_hourly_stats, 'cron', minute=0, id='hourly_stats')
     scheduler.start()
     logger.info("Scheduler started: hourly stats computation at minute 0 of every hour")
-
-    # Run initial stats computation
     asyncio.create_task(compute_hourly_stats())
 
 @app.on_event("shutdown")
@@ -79,7 +71,6 @@ async def get_version():
 
 @app.get("/content/{filename}")
 async def get_content(filename: str):
-    """Serve markdown and image files from the content directory."""
     file_path = CONTENT_DIR / filename
 
     if not file_path.exists():
@@ -93,7 +84,6 @@ async def get_content(filename: str):
 
 @app.get("/download/paper")
 async def download_paper(request: Request):
-    """Serve the PDF report with download logging."""
     ip_address = request.client.host if request.client else "unknown"
     pdf_path = REPORT_DIR / "main.pdf"
 
@@ -111,7 +101,6 @@ async def download_paper(request: Request):
 
 @app.get("/download/slides")
 async def download_slides(request: Request):
-    """Serve the slides PDF with download logging."""
     ip_address = request.client.host if request.client else "unknown"
 
     slides_path = SLIDES_DIR / "slides.pdf"
@@ -130,13 +119,11 @@ async def download_slides(request: Request):
 
 @app.get("/resources/{filename}")
 async def get_resource(filename: str):
-    """Serve TPC-H query files from resources directory."""
     file_path = RESOURCES_DIR / filename
 
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Resource not found")
 
-    # Security check: ensure file is within resources directory
     if not str(file_path.resolve()).startswith(str(RESOURCES_DIR.resolve())):
         raise HTTPException(status_code=403, detail="Access denied")
 
@@ -155,24 +142,20 @@ async def execute_query(query_request: QueryRequest, request: Request):
         await log_user_request(ip_address, request_id)
 
         cached_result = await get_cached_query(request_id)
-        # cached_result = None
         if cached_result:
             logger.info(f"Cache hit for request_id: {request_id}")
             return {"cached": True, "result": cached_result}
 
         logger.info(f"Cache miss for request_id: {request_id}, executing query")
 
-        # Execute query against postgres
         postgres_result = await postgres_connector.run(query_request.query)
 
-        # Log query execution for performance tracking
         await log_query_execution(
             query_request.query,
             postgres_result.database,
             postgres_result.latency_ms
         )
 
-        # Format result
         result = {
             "main_display": f"Query executed successfully against {postgres_result.database}.",
             "results": [
@@ -203,7 +186,6 @@ async def execute_query(query_request: QueryRequest, request: Request):
 
 @app.get("/stats/performance")
 async def get_stats(limit: int = 24):
-    """Get hourly performance statistics."""
     try:
         stats = await get_performance_stats(limit=limit)
         return {"stats": stats}
@@ -213,7 +195,6 @@ async def get_stats(limit: int = 24):
 
 @app.post("/debug")
 async def debug_endpoint(debug_request: DebugRequest):
-    """Debug endpoint with key authentication."""
     return await debug.handle_debug_request(
         debug_request.key,
         debug_request.request,

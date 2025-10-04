@@ -49,7 +49,6 @@ const QueryPage: React.FC = () => {
   const [performanceStats, setPerformanceStats] = useState<PerformanceStat[]>([]);
   const [performanceDashboardExpanded, setPerformanceDashboardExpanded] = useState<boolean>(true);
 
-  // Calculate height based on content, max 100 lines, +3 rows for padding
   const calculateHeight = (content: string, lineHeight: number = 20) => {
     const lines = content.split('\n').length;
     const maxLines = 100;
@@ -130,14 +129,13 @@ const QueryPage: React.FC = () => {
 
   useEffect(() => {
     fetchPerformanceStats();
-    const interval = setInterval(fetchPerformanceStats, 60000); // Refresh every minute
+    const interval = setInterval(fetchPerformanceStats, 60000);
     return () => clearInterval(interval);
   }, []);
 
   const renderPerformanceChart = (stats: PerformanceStat[]) => {
     if (stats.length === 0) return null;
 
-    // Group by database
     const statsByDatabase = stats.reduce((acc, stat) => {
       if (!acc[stat.database]) acc[stat.database] = [];
       acc[stat.database].push(stat);
@@ -145,7 +143,7 @@ const QueryPage: React.FC = () => {
     }, {} as Record<string, PerformanceStat[]>);
 
     return Object.entries(statsByDatabase).map(([database, dbStats]) => {
-      const latestStat = dbStats[0]; // Most recent stats
+      const latestStat = dbStats[0];
 
       return (
         <div key={database} className="performance-chart">

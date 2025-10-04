@@ -1,39 +1,22 @@
-"""
-Debug module with key-based authentication.
-"""
 import secrets
 import base64
 from logger import logger
 from database import compute_hourly_stats
 
-# Generate debug key at module load
 DEBUG_KEY = base64.urlsafe_b64encode(secrets.token_bytes(15))[:20].decode('utf-8')
 
 def init_debug():
-    """Initialize debug module and log the key."""
     logger.info(f"=" * 80)
     logger.info(f"DEBUG KEY: {DEBUG_KEY}")
     logger.info(f"=" * 80)
 
 async def handle_debug_request(key: str, request: str, content: str = ""):
-    """
-    Handle debug requests with key authentication.
-
-    Args:
-        key: Authentication key
-        request: Debug command to execute
-        content: Optional content for the request
-
-    Returns:
-        Response dict with status and result
-    """
     if key != DEBUG_KEY:
         logger.warning(f"Invalid debug key attempt: {key}")
         return {"error": "Invalid debug key"}
 
     logger.info(f"Debug request: {request}")
 
-    # Route to appropriate debug function
     if request == "compute_stats":
         return await debug_compute_stats()
     elif request == "query_log_count":
@@ -46,7 +29,6 @@ async def handle_debug_request(key: str, request: str, content: str = ""):
         return {"error": f"Unknown debug request: {request}"}
 
 async def debug_compute_stats():
-    """Manually trigger stats computation."""
     try:
         await compute_hourly_stats()
         return {"status": "success", "message": "Stats computation triggered"}
@@ -55,7 +37,6 @@ async def debug_compute_stats():
         return {"status": "error", "message": str(e)}
 
 async def debug_query_log_count():
-    """Get count of queries in the log."""
     from database import DB_PATH
     import aiosqlite
 
@@ -76,7 +57,6 @@ async def debug_query_log_count():
         return {"status": "error", "message": str(e)}
 
 async def debug_clear_stats():
-    """Clear performance stats table."""
     from database import DB_PATH
     import aiosqlite
 
@@ -92,7 +72,6 @@ async def debug_clear_stats():
         return {"status": "error", "message": str(e)}
 
 def debug_info():
-    """Get debug module information."""
     return {
         "status": "success",
         "available_requests": [

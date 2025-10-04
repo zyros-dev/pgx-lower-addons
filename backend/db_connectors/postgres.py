@@ -3,8 +3,6 @@ from typing import List
 from .base import DatabaseConnector, QueryOutput
 
 class PostgresConnector(DatabaseConnector):
-    """PostgreSQL database connector."""
-
     def __init__(self, host: str = "postgres", port: int = 5432,
                  user: str = "pgxuser", password: str = "pgxpassword",
                  database: str = "pgxdb"):
@@ -19,7 +17,6 @@ class PostgresConnector(DatabaseConnector):
         self.conn = None
 
     async def connect(self):
-        """Establish connection to PostgreSQL."""
         self.conn = await asyncpg.connect(
             host=self.host,
             port=self.port,
@@ -29,28 +26,22 @@ class PostgresConnector(DatabaseConnector):
         )
 
     async def disconnect(self):
-        """Close PostgreSQL connection."""
         if self.conn:
             await self.conn.close()
             self.conn = None
 
     async def get_version(self) -> str:
-        """Get PostgreSQL version."""
         if not self.conn:
             await self.connect()
 
         result = await self.conn.fetchval("SELECT version()")
-        # Extract version number (e.g., "PostgreSQL 17.5")
         version_parts = result.split()
         return f"{version_parts[0]} {version_parts[1]}"
 
     async def initialize_tables(self):
-        """Initialize TPC-H tables if needed."""
-        # This will be implemented when we load TPC-H data
         pass
 
     async def _execute_query(self, query: str) -> List[QueryOutput]:
-        """Execute query and return results."""
         if not self.conn:
             await self.connect()
 
@@ -58,7 +49,6 @@ class PostgresConnector(DatabaseConnector):
         import time
 
         try:
-            # First, get EXPLAIN ANALYZE (for plan with execution stats)
             start = time.time()
             analyze_results = await self.conn.fetch(f"EXPLAIN ANALYZE {query}")
             analyze_latency = (time.time() - start) * 1000
@@ -68,15 +58,13 @@ class PostgresConnector(DatabaseConnector):
             outputs.append(QueryOutput(
                 title="Query Plan (EXPLAIN ANALYZE)",
                 content=analyze_content,
-                latency_ms=None  # Don't include EXPLAIN time in total
+                latency_ms=None
             ))
 
-            # Then execute the actual SELECT for clean timing
             start = time.time()
             results = await self.conn.fetch(query)
             query_latency = (time.time() - start) * 1000
 
-            # Format results as table
             if results:
                 columns = list(results[0].keys())
                 table_lines = [" | ".join(columns)]
@@ -97,7 +85,6 @@ class PostgresConnector(DatabaseConnector):
             ))
 
         except Exception as e:
-            # Return SQL error to user
             outputs.append(QueryOutput(
                 title="SQL Error",
                 content=f"{type(e).__name__}: {str(e)}",
