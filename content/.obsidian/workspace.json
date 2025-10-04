@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "README.md",
+                "file": "blog.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "README"
+              "title": "blog"
             }
           }
         ]
@@ -171,6 +171,7 @@
   },
   "active": "db6a5cd74ea71f23",
   "lastOpenFiles": [
+    "README.md",
     "README.md.tmp.25587.1759608295601",
     "README.md.tmp.25587.1759608252391",
     "README.md.tmp.25587.1759608014039",
@@ -183,7 +184,6 @@
     "Pasted image 20251005060834.png",
     "Pasted image 20251005060709.png",
     "blog.md",
-    "README.md",
     "example-diagram.svg"
   ]
 }

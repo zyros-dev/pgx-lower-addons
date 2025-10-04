@@ -113,6 +113,19 @@ async def get_content(filename: str):
     logger.info(f"Serving content file: {filename}")
     return FileResponse(file_path)
 
+@app.get("/resources/{filename}")
+async def get_resource(filename: str):
+    file_path = RESOURCES_DIR / filename
+
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    if not str(file_path.resolve()).startswith(str(RESOURCES_DIR.resolve())):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    logger.info(f"Serving resource file: {filename}")
+    return FileResponse(file_path)
+
 @app.get("/download/paper")
 async def download_paper(request: Request):
     ip_address = request.client.host if request.client else "unknown"
