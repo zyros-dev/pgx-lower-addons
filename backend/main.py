@@ -23,7 +23,12 @@ app = FastAPI(title="pgx-lower API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost",
+        "https://zyros.dev",
+        "https://pgx.zyros.dev"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,6 +36,8 @@ app.add_middleware(
 
 class QueryRequest(BaseModel):
     query: str
+
+MAX_QUERY_LENGTH = 10000
 
 class DebugRequest(BaseModel):
     key: str
@@ -157,6 +164,10 @@ async def get_resource(filename: str):
 @app.post("/query")
 async def execute_query(query_request: QueryRequest, request: Request):
     ip_address = request.client.host if request.client else "unknown"
+
+    if len(query_request.query) > MAX_QUERY_LENGTH:
+        raise HTTPException(status_code=400, detail=f"Query too long. Maximum {MAX_QUERY_LENGTH} characters.")
+
     request_id = hashlib.md5(query_request.query.encode()).hexdigest()
 
     try:

@@ -150,11 +150,7 @@ const QueryPage: React.FC = () => {
           <h4>{database.toUpperCase()} Performance</h4>
           <div className="stats-summary">
             <div className="stat-item">
-              <span className="stat-label">Total Queries</span>
-              <span className="stat-value">{latestStat.query_count}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Unique Queries</span>
+              <span className="stat-label">Queries Tested</span>
               <span className="stat-value">{latestStat.unique_queries}</span>
             </div>
             <div className="stat-item">

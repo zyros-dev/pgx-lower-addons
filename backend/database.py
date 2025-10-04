@@ -112,33 +112,20 @@ async def compute_hourly_stats():
     from logger import logger
 
     async with aiosqlite.connect(DB_PATH) as db:
-        async with db.execute(
-            "SELECT MAX(hour_bucket) FROM performance_stats"
-        ) as cursor:
-            row = await cursor.fetchone()
-            last_computed = row[0] if row[0] else "1970-01-01 00:00:00"
+        await db.execute("DELETE FROM performance_stats")
 
-        async with db.execute("""
-            SELECT DISTINCT
-                datetime(strftime('%Y-%m-%d %H:00:00', timestamp)) as hour_bucket,
-                database
-            FROM query_log
-            WHERE timestamp > ?
-            GROUP BY hour_bucket, database
-            ORDER BY hour_bucket
-        """, (last_computed,)) as cursor:
-            buckets = await cursor.fetchall()
+        async with db.execute("SELECT DISTINCT database FROM query_log") as cursor:
+            databases = [row[0] for row in await cursor.fetchall()]
 
-        logger.info(f"Computing stats for {len(buckets)} hour buckets")
+        logger.info(f"Computing overall stats for {len(databases)} databases")
 
-        for hour_bucket, database in buckets:
+        for database in databases:
             async with db.execute("""
                 SELECT latency_ms
                 FROM query_log
                 WHERE database = ?
-                  AND datetime(strftime('%Y-%m-%d %H:00:00', timestamp)) = ?
                 ORDER BY latency_ms
-            """, (database, hour_bucket)) as cursor:
+            """, (database,)) as cursor:
                 latencies = []
                 async for row in cursor:
                     latencies.append(row[0])
@@ -160,14 +147,13 @@ async def compute_hourly_stats():
                 SELECT COUNT(DISTINCT query_hash)
                 FROM query_log
                 WHERE database = ?
-                  AND datetime(strftime('%Y-%m-%d %H:00:00', timestamp)) = ?
-            """, (database, hour_bucket)) as cursor:
+            """, (database,)) as cursor:
                 unique_count = (await cursor.fetchone())[0]
 
             stats = {
                 "database": database,
-                "hour_bucket": hour_bucket,
-                "query_count": n,
+                "hour_bucket": "all-time",
+                "query_count": unique_count,
                 "unique_queries": unique_count,
                 "min_latency_ms": latencies[0],
                 "p25_latency_ms": percentile(latencies, 0.25),
@@ -192,7 +178,7 @@ async def compute_hourly_stats():
                 stats["max_latency_ms"], stats["mean_latency_ms"]
             ))
 
-            logger.info(f"Computed stats for {database} at {hour_bucket}: {n} queries, {unique_count} unique")
+            logger.info(f"Computed overall stats for {database}: {n} queries, {unique_count} unique")
 
         await db.commit()
 
