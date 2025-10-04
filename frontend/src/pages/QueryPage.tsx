@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Editor, { loader } from '@monaco-editor/react';
 import githubLight from 'monaco-themes/themes/GitHub.json';
 import './QueryPage.css';
@@ -13,6 +13,7 @@ interface DatabaseResult {
   database: string;
   version: string;
   latency_ms: number;
+  cached: boolean;
   outputs: Output[];
 }
 
@@ -21,14 +22,32 @@ interface QueryResult {
   results: DatabaseResult[];
 }
 
+interface PerformanceStat {
+  database: string;
+  hour_bucket: string;
+  query_count: number;
+  unique_queries: number;
+  min_latency_ms: number;
+  p25_latency_ms: number;
+  p50_latency_ms: number;
+  p75_latency_ms: number;
+  p95_latency_ms: number;
+  p99_latency_ms: number;
+  max_latency_ms: number;
+  mean_latency_ms: number;
+}
+
 const QueryPage: React.FC = () => {
   const [query, setQuery] = useState<string>('-- Select a TPC-H query or write your own');
   const [result, setResult] = useState<QueryResult | null>(null);
+  const [isCached, setIsCached] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [expandedDatabases, setExpandedDatabases] = useState<Set<string>>(new Set());
   const [editorHeight, setEditorHeight] = useState<number>(250);
   const [mainDisplayHeight, setMainDisplayHeight] = useState<number>(100);
   const [outputHeights, setOutputHeights] = useState<{[key: string]: number}>({});
+  const [performanceStats, setPerformanceStats] = useState<PerformanceStat[]>([]);
+  const [performanceDashboardExpanded, setPerformanceDashboardExpanded] = useState<boolean>(true);
 
   // Calculate height based on content, max 100 lines, +3 rows for padding
   const calculateHeight = (content: string, lineHeight: number = 20) => {
@@ -82,6 +101,7 @@ const QueryPage: React.FC = () => {
       });
       const data = await response.json();
       setResult(data.result);
+      setIsCached(data.cached || false);
     } catch (error) {
       console.error('Failed to execute query:', error);
     }
@@ -98,12 +118,167 @@ const QueryPage: React.FC = () => {
     setExpandedDatabases(newExpanded);
   };
 
+  const fetchPerformanceStats = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/stats/performance?limit=24');
+      const data = await response.json();
+      setPerformanceStats(data.stats);
+    } catch (error) {
+      console.error('Failed to fetch performance stats:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPerformanceStats();
+    const interval = setInterval(fetchPerformanceStats, 60000); // Refresh every minute
+    return () => clearInterval(interval);
+  }, []);
+
+  const renderPerformanceChart = (stats: PerformanceStat[]) => {
+    if (stats.length === 0) return null;
+
+    // Group by database
+    const statsByDatabase = stats.reduce((acc, stat) => {
+      if (!acc[stat.database]) acc[stat.database] = [];
+      acc[stat.database].push(stat);
+      return acc;
+    }, {} as Record<string, PerformanceStat[]>);
+
+    return Object.entries(statsByDatabase).map(([database, dbStats]) => {
+      const latestStat = dbStats[0]; // Most recent stats
+
+      return (
+        <div key={database} className="performance-chart">
+          <h4>{database.toUpperCase()} Performance</h4>
+          <div className="stats-summary">
+            <div className="stat-item">
+              <span className="stat-label">Total Queries</span>
+              <span className="stat-value">{latestStat.query_count}</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-label">Unique Queries</span>
+              <span className="stat-value">{latestStat.unique_queries}</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-label">Mean Latency</span>
+              <span className="stat-value">{latestStat.mean_latency_ms.toFixed(2)}ms</span>
+            </div>
+          </div>
+
+          <div className="percentile-chart">
+            <div className="chart-bar-container">
+              <div className="chart-label">Min</div>
+              <div className="chart-bar-wrapper">
+                <div
+                  className="chart-bar chart-bar-min"
+                  style={{ width: `${Math.max((latestStat.min_latency_ms / latestStat.max_latency_ms) * 100, 5)}%` }}
+                >
+                  <span className="chart-value">{latestStat.min_latency_ms.toFixed(2)}ms</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="chart-bar-container">
+              <div className="chart-label">p25</div>
+              <div className="chart-bar-wrapper">
+                <div
+                  className="chart-bar chart-bar-p25"
+                  style={{ width: `${Math.max((latestStat.p25_latency_ms / latestStat.max_latency_ms) * 100, 5)}%` }}
+                >
+                  <span className="chart-value">{latestStat.p25_latency_ms.toFixed(2)}ms</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="chart-bar-container">
+              <div className="chart-label">p50</div>
+              <div className="chart-bar-wrapper">
+                <div
+                  className="chart-bar chart-bar-p50"
+                  style={{ width: `${Math.max((latestStat.p50_latency_ms / latestStat.max_latency_ms) * 100, 5)}%` }}
+                >
+                  <span className="chart-value">{latestStat.p50_latency_ms.toFixed(2)}ms</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="chart-bar-container">
+              <div className="chart-label">p75</div>
+              <div className="chart-bar-wrapper">
+                <div
+                  className="chart-bar chart-bar-p75"
+                  style={{ width: `${Math.max((latestStat.p75_latency_ms / latestStat.max_latency_ms) * 100, 5)}%` }}
+                >
+                  <span className="chart-value">{latestStat.p75_latency_ms.toFixed(2)}ms</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="chart-bar-container">
+              <div className="chart-label">p95</div>
+              <div className="chart-bar-wrapper">
+                <div
+                  className="chart-bar chart-bar-p95"
+                  style={{ width: `${Math.max((latestStat.p95_latency_ms / latestStat.max_latency_ms) * 100, 5)}%` }}
+                >
+                  <span className="chart-value">{latestStat.p95_latency_ms.toFixed(2)}ms</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="chart-bar-container">
+              <div className="chart-label">p99</div>
+              <div className="chart-bar-wrapper">
+                <div
+                  className="chart-bar chart-bar-p99"
+                  style={{ width: `${Math.max((latestStat.p99_latency_ms / latestStat.max_latency_ms) * 100, 5)}%` }}
+                >
+                  <span className="chart-value">{latestStat.p99_latency_ms.toFixed(2)}ms</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="chart-bar-container">
+              <div className="chart-label">Max</div>
+              <div className="chart-bar-wrapper">
+                <div
+                  className="chart-bar chart-bar-max"
+                  style={{ width: '100%' }}
+                >
+                  <span className="chart-value">{latestStat.max_latency_ms.toFixed(2)}ms</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    });
+  };
+
   return (
     <div className="query-page">
-      {/* Performance Dashboard Placeholder */}
+      {/* Performance Dashboard */}
       <div className="performance-dashboard-section">
-        <h3>Performance Dashboard</h3>
-        <p className="placeholder-text">Coming soon...</p>
+        <div
+          className="performance-dashboard-header"
+          onClick={() => setPerformanceDashboardExpanded(!performanceDashboardExpanded)}
+        >
+          <h3>Performance Dashboard</h3>
+          <span className="collapse-icon">
+            {performanceDashboardExpanded ? '▼' : '▶'}
+          </span>
+        </div>
+        {performanceDashboardExpanded && (
+          <>
+            {performanceStats.length > 0 ? (
+              <div className="performance-charts">
+                {renderPerformanceChart(performanceStats)}
+              </div>
+            ) : (
+              <p className="placeholder-text">No performance data available yet. Run some queries to see statistics.</p>
+            )}
+          </>
+        )}
       </div>
 
       {/* SQL Editor */}
@@ -160,7 +335,10 @@ const QueryPage: React.FC = () => {
       {result && (
         <>
           <div className="main-display-section">
-            <h3>Output</h3>
+            <div className="output-section-header">
+              <h3>Output</h3>
+              {isCached && <span className="cached-badge">CACHED</span>}
+            </div>
             <div className="resizable-textarea-container">
               <textarea
                 className="main-display-box"
@@ -188,6 +366,9 @@ const QueryPage: React.FC = () => {
                     <span className="database-name">{dbResult.database} | {dbResult.version}</span>
                   </div>
                   <div>
+                    {dbResult.cached && (
+                      <span className="cached-badge">CACHED</span>
+                    )}
                     <span className="database-latency">{dbResult.latency_ms}ms</span>
                     <span className="collapse-icon">
                       {expandedDatabases.has(dbResult.database) ? '▼' : '▶'}

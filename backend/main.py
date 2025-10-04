@@ -5,9 +5,12 @@ from pydantic import BaseModel
 import hashlib
 import json
 from pathlib import Path
-from database import init_db, log_user_request, get_cached_query, cache_query, VERSION
+from database import init_db, log_user_request, get_cached_query, cache_query, log_query_execution, compute_hourly_stats, get_performance_stats, VERSION
 from logger import logger
 from db_connectors.postgres import PostgresConnector
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import asyncio
+import debug
 
 CONTENT_DIR = Path(__file__).parent / "content"
 REPORT_DIR = Path(__file__).parent / "pgx-lower-report"
@@ -28,7 +31,13 @@ app.add_middleware(
 class QueryRequest(BaseModel):
     query: str
 
+class DebugRequest(BaseModel):
+    key: str
+    request: str
+    content: str = ""
+
 postgres_connector = PostgresConnector()
+scheduler = AsyncIOScheduler()
 
 @app.on_event("startup")
 async def startup():
@@ -36,9 +45,25 @@ async def startup():
     await init_db()
     logger.info("Database initialized")
 
+    # Initialize debug module
+    debug.init_debug()
+
     # Connect to postgres
     await postgres_connector.connect()
     logger.info("Connected to PostgreSQL")
+
+    # Start scheduler for hourly stats computation
+    scheduler.add_job(compute_hourly_stats, 'cron', minute=0, id='hourly_stats')
+    scheduler.start()
+    logger.info("Scheduler started: hourly stats computation at minute 0 of every hour")
+
+    # Run initial stats computation
+    asyncio.create_task(compute_hourly_stats())
+
+@app.on_event("shutdown")
+async def shutdown():
+    scheduler.shutdown()
+    logger.info("Scheduler stopped")
 
 @app.get("/")
 async def root():
@@ -129,8 +154,8 @@ async def execute_query(query_request: QueryRequest, request: Request):
     try:
         await log_user_request(ip_address, request_id)
 
-        # cached_result = await get_cached_query(request_id)
-        cached_result = None
+        cached_result = await get_cached_query(request_id)
+        # cached_result = None
         if cached_result:
             logger.info(f"Cache hit for request_id: {request_id}")
             return {"cached": True, "result": cached_result}
@@ -140,6 +165,13 @@ async def execute_query(query_request: QueryRequest, request: Request):
         # Execute query against postgres
         postgres_result = await postgres_connector.run(query_request.query)
 
+        # Log query execution for performance tracking
+        await log_query_execution(
+            query_request.query,
+            postgres_result.database,
+            postgres_result.latency_ms
+        )
+
         # Format result
         result = {
             "main_display": f"Query executed successfully against {postgres_result.database}.",
@@ -147,11 +179,12 @@ async def execute_query(query_request: QueryRequest, request: Request):
                 {
                     "database": postgres_result.database,
                     "version": postgres_result.version,
+                    "cached": cached_result is not None,
                     "latency_ms": postgres_result.latency_ms,
                     "outputs": [
                         {
-                            "title": output.title,
                             "content": output.content,
+                            "title": output.title,
                             "latency_ms": output.latency_ms
                         }
                         for output in postgres_result.outputs
@@ -167,3 +200,22 @@ async def execute_query(query_request: QueryRequest, request: Request):
     except Exception as e:
         logger.error(f"Error processing query from {ip_address}: {str(e)}")
         raise
+
+@app.get("/stats/performance")
+async def get_stats(limit: int = 24):
+    """Get hourly performance statistics."""
+    try:
+        stats = await get_performance_stats(limit=limit)
+        return {"stats": stats}
+    except Exception as e:
+        logger.error(f"Error fetching performance stats: {str(e)}")
+        raise
+
+@app.post("/debug")
+async def debug_endpoint(debug_request: DebugRequest):
+    """Debug endpoint with key authentication."""
+    return await debug.handle_debug_request(
+        debug_request.key,
+        debug_request.request,
+        debug_request.content
+    )

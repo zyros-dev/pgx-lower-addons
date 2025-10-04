@@ -52,6 +52,22 @@ services:
     networks:
       - pgx-network
 
+  deadman:
+    build:
+      context: ./deadman
+      dockerfile: Dockerfile
+    container_name: pgx-lower-deadman
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:/workspace
+    depends_on:
+      - postgres
+      - backend
+      - frontend
+    restart: unless-stopped
+    networks:
+      - pgx-network
+
 volumes:
   postgres_data:
 

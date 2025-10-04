@@ -55,44 +55,53 @@ class PostgresConnector(DatabaseConnector):
             await self.connect()
 
         outputs = []
-
-        # First, get EXPLAIN ANALYZE (for plan with execution stats)
         import time
-        start = time.time()
-        analyze_results = await self.conn.fetch(f"EXPLAIN ANALYZE {query}")
-        analyze_latency = (time.time() - start) * 1000
 
-        analyze_content = "\n".join(row['QUERY PLAN'] for row in analyze_results)
+        try:
+            # First, get EXPLAIN ANALYZE (for plan with execution stats)
+            start = time.time()
+            analyze_results = await self.conn.fetch(f"EXPLAIN ANALYZE {query}")
+            analyze_latency = (time.time() - start) * 1000
 
-        outputs.append(QueryOutput(
-            title="Query Plan (EXPLAIN ANALYZE)",
-            content=analyze_content,
-            latency_ms=None  # Don't include EXPLAIN time in total
-        ))
+            analyze_content = "\n".join(row['QUERY PLAN'] for row in analyze_results)
 
-        # Then execute the actual SELECT for clean timing
-        start = time.time()
-        results = await self.conn.fetch(query)
-        query_latency = (time.time() - start) * 1000
+            outputs.append(QueryOutput(
+                title="Query Plan (EXPLAIN ANALYZE)",
+                content=analyze_content,
+                latency_ms=None  # Don't include EXPLAIN time in total
+            ))
 
-        # Format results as table
-        if results:
-            columns = list(results[0].keys())
-            table_lines = [" | ".join(columns)]
-            table_lines.append("-" * len(table_lines[0]))
+            # Then execute the actual SELECT for clean timing
+            start = time.time()
+            results = await self.conn.fetch(query)
+            query_latency = (time.time() - start) * 1000
 
-            for row in results:
-                row_values = [str(row[col]) if row[col] is not None else "NULL" for col in columns]
-                table_lines.append(" | ".join(row_values))
+            # Format results as table
+            if results:
+                columns = list(results[0].keys())
+                table_lines = [" | ".join(columns)]
+                table_lines.append("-" * len(table_lines[0]))
 
-            content = "\n".join(table_lines)
-        else:
-            content = "No results returned"
+                for row in results:
+                    row_values = [str(row[col]) if row[col] is not None else "NULL" for col in columns]
+                    table_lines.append(" | ".join(row_values))
 
-        outputs.append(QueryOutput(
-            title="Query Results",
-            content=content,
-            latency_ms=round(query_latency, 2)
-        ))
+                content = "\n".join(table_lines)
+            else:
+                content = "No results returned"
+
+            outputs.append(QueryOutput(
+                title="Query Results",
+                content=content,
+                latency_ms=round(query_latency, 2)
+            ))
+
+        except Exception as e:
+            # Return SQL error to user
+            outputs.append(QueryOutput(
+                title="SQL Error",
+                content=f"{type(e).__name__}: {str(e)}",
+                latency_ms=None
+            ))
 
         return outputs

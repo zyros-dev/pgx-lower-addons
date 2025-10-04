@@ -121,9 +121,15 @@
   margin-bottom: 2rem;
 }
 
-.main-display-section h3 {
-  margin-top: 0;
+.output-section-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   margin-bottom: 1rem;
+}
+
+.main-display-section h3 {
+  margin: 0;
   color: var(--primary-dark);
   font-weight: 600;
 }
@@ -192,6 +198,18 @@
   font-size: 1.1rem;
 }
 
+.cached-badge {
+  background-color: #48bb78;
+  color: white;
+  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  margin-right: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .database-latency {
   color: var(--primary);
   font-weight: 500;
@@ -251,20 +269,167 @@
 /* Performance Dashboard */
 .performance-dashboard-section {
   background-color: white;
-  padding: 1.5rem;
   border-radius: 6px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.performance-dashboard-header {
+  padding: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.2s;
+  background-color: #edf2f7;
+  border-bottom: 1px solid #cbd5e0;
+}
+
+.performance-dashboard-header:hover {
+  background-color: #e2e8f0;
 }
 
 .performance-dashboard-section h3 {
-  margin-top: 0;
-  margin-bottom: 1rem;
+  margin: 0;
   color: var(--primary-dark);
   font-weight: 600;
+}
+
+.performance-charts {
+  padding: 1.5rem;
 }
 
 .placeholder-text {
   color: #718096;
   font-style: italic;
+  padding: 1.5rem;
+  margin: 0;
+}
+
+.performance-charts {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.performance-chart {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 1rem;
+  background-color: #f7fafc;
+}
+
+.performance-chart h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--primary);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+.stats-summary {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem;
+  background-color: white;
+  border-radius: 4px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: #718096;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--primary-dark);
+}
+
+.percentile-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.chart-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.chart-label {
+  width: 40px;
+  text-align: right;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.chart-bar-wrapper {
+  flex: 1;
+  background-color: #e2e8f0;
+  border-radius: 4px;
+  height: 28px;
+  position: relative;
+  overflow: hidden;
+}
+
+.chart-bar {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 0.5rem;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.chart-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  padding-left: 0.5rem;
+}
+
+.chart-bar-min {
+  background: linear-gradient(90deg, #48bb78, #38a169);
+}
+
+.chart-bar-p25 {
+  background: linear-gradient(90deg, #4299e1, #3182ce);
+}
+
+.chart-bar-p50 {
+  background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+}
+
+.chart-bar-p75 {
+  background: linear-gradient(90deg, #ed8936, #dd6b20);
+}
+
+.chart-bar-p95 {
+  background: linear-gradient(90deg, #f56565, #e53e3e);
+}
+
+.chart-bar-p99 {
+  background: linear-gradient(90deg, #e53e3e, #c53030);
+}
+
+.chart-bar-max {
+  background: linear-gradient(90deg, #c53030, #9b2c2c);
 }

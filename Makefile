@@ -1,4 +1,4 @@
-.PHONY: help serve clean install report
+.PHONY: help serve stop clean install report
 
 help:
 	@echo "pgx-lower-addons Makefile"
@@ -6,6 +6,7 @@ help:
 	@echo "Available targets:"
 	@echo "  install      - Install all dependencies (creates venv if needed)"
 	@echo "  serve        - Start frontend and backend development servers"
+	@echo "  stop         - Stop all running containers"
 	@echo "  clean        - Clean build artifacts"
 	@echo "  report       - Build LaTeX report"
 
@@ -22,6 +23,10 @@ serve:
 	@docker-compose down
 	@echo "Building and starting Docker containers..."
 	@docker-compose up -d --build
+
+stop:
+	@echo "Stopping all containers..."
+	@docker-compose down
 
 clean:
 	rm -rf frontend/node_modules frontend/dist frontend/build frontend/.next
