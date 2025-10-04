@@ -11,6 +11,8 @@ from db_connectors.postgres import PostgresConnector
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import asyncio
 import debug
+from datetime import datetime, timedelta
+from collections import defaultdict
 
 CONTENT_DIR = Path(__file__).parent / "content"
 REPORT_DIR = Path(__file__).parent / "pgx-lower-report"
@@ -37,6 +39,28 @@ class DebugRequest(BaseModel):
 
 postgres_connector = PostgresConnector()
 scheduler = AsyncIOScheduler()
+
+rate_limit_store = defaultdict(lambda: {"cached": [], "uncached": []})
+MAX_CACHED_QUERIES_PER_MINUTE = 100
+MAX_UNCACHED_QUERIES_PER_MINUTE = 10
+
+def check_rate_limit(ip_address: str, is_cached: bool) -> bool:
+    now = datetime.now()
+    cutoff = now - timedelta(minutes=1)
+
+    query_type = "cached" if is_cached else "uncached"
+    max_queries = MAX_CACHED_QUERIES_PER_MINUTE if is_cached else MAX_UNCACHED_QUERIES_PER_MINUTE
+
+    rate_limit_store[ip_address][query_type] = [
+        timestamp for timestamp in rate_limit_store[ip_address][query_type]
+        if timestamp > cutoff
+    ]
+
+    if len(rate_limit_store[ip_address][query_type]) >= max_queries:
+        return False
+
+    rate_limit_store[ip_address][query_type].append(now)
+    return True
 
 @app.on_event("startup")
 async def startup():
@@ -133,15 +157,20 @@ async def get_resource(filename: str):
 @app.post("/query")
 async def execute_query(query_request: QueryRequest, request: Request):
     ip_address = request.client.host if request.client else "unknown"
-
     request_id = hashlib.md5(query_request.query.encode()).hexdigest()
-
-    logger.info(f"Query request from {ip_address} - request_id: {request_id}")
 
     try:
         await log_user_request(ip_address, request_id)
 
         cached_result = await get_cached_query(request_id)
+        is_cached = cached_result is not None
+
+        if not check_rate_limit(ip_address, is_cached):
+            limit = MAX_CACHED_QUERIES_PER_MINUTE if is_cached else MAX_UNCACHED_QUERIES_PER_MINUTE
+            raise HTTPException(status_code=429, detail=f"Rate limit exceeded. Maximum {limit} {'cached' if is_cached else 'uncached'} queries per minute.")
+
+        logger.info(f"Query request from {ip_address} - request_id: {request_id} - cached: {is_cached}")
+
         if cached_result:
             logger.info(f"Cache hit for request_id: {request_id}")
             return {"cached": True, "result": cached_result}

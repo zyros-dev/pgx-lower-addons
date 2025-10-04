@@ -65,7 +65,18 @@ class DatabaseConnector(ABC):
         pass
 
     def validate_readonly_query(self, query: str) -> bool:
-        query_upper = query.strip().upper()
+        query_stripped = query.strip()
+
+        if query_stripped.count(';') > 1:
+            raise ValueError("Only one SQL statement allowed")
+
+        if query_stripped.endswith(';'):
+            query_stripped = query_stripped[:-1].strip()
+
+        if ';' in query_stripped:
+            raise ValueError("Multiple SQL statements not allowed")
+
+        query_upper = query_stripped.upper()
         query_upper = re.sub(r'--.*$', '', query_upper, flags=re.MULTILINE)
         query_upper = re.sub(r'/\*.*?\*/', '', query_upper, flags=re.DOTALL)
 
