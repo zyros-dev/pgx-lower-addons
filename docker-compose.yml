@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:17.5
+    container_name: pgx-lower-postgres
+    environment:
+      POSTGRES_USER: pgxuser
+      POSTGRES_PASSWORD: pgxpassword
+      POSTGRES_DB: pgxdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - pgx-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pgx-lower-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/database:/data/database
+      - ./data/logs:/data/logs
+    environment:
+      - DATABASE_PATH=/data/database/pgx_lower.db
+      - LOG_PATH=/data/logs
+    depends_on:
+      - postgres
+    networks:
+      - pgx-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pgx-lower-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - pgx-network
+
+volumes:
+  postgres_data:
+
+networks:
+  pgx-network:
+    driver: bridge

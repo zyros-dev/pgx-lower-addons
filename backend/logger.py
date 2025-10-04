@@ -2,9 +2,10 @@ import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 import sys
+import os
 
-LOG_DIR = Path(__file__).parent.parent / "logs"
-LOG_DIR.mkdir(exist_ok=True)
+LOG_DIR = Path(os.getenv("LOG_PATH", Path(__file__).parent.parent / "logs"))
+LOG_DIR.mkdir(exist_ok=True, parents=True)
 
 class Logger:
     _instance = None

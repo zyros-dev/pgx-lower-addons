@@ -18,8 +18,10 @@ install:
 	@echo "Done!"
 
 serve:
-	@echo "Starting frontend and backend..."
-	@(cd frontend && npm start) & (cd backend && ./venv/bin/python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000)
+	@echo "Stopping any running containers..."
+	@docker-compose down
+	@echo "Starting Docker containers..."
+	@docker-compose up -d
 
 clean:
 	rm -rf frontend/node_modules frontend/dist frontend/build frontend/.next

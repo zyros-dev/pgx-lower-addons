@@ -2,8 +2,9 @@ import aiosqlite
 from datetime import datetime
 import json
 from pathlib import Path
+import os
 
-DB_PATH = Path(__file__).parent / "database" / "pgx_lower.db"
+DB_PATH = Path(os.getenv("DATABASE_PATH", Path(__file__).parent / "database" / "pgx_lower.db"))
 VERSION = "0.1.0"
 
 async def init_db():
