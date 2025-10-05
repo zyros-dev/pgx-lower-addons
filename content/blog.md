@@ -16,3 +16,7 @@ My Notion pages have some sections on this: https://www.notion.so/zyros/Compiled
 
 
 ## Case 2: Subqueries
+
+
+## Case 3: Contexts and Scopes
+
