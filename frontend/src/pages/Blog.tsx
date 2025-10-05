@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import remarkGfm from 'remark-gfm';
+import { API_BASE_URL } from '../config';
 import 'highlight.js/styles/tokyo-night-light.css';
 import './MarkdownPage.css';
 
@@ -11,7 +12,7 @@ const Blog: React.FC = () => {
   useEffect(() => {
     const fetchMarkdown = async () => {
       try {
-        const response = await fetch('http://localhost:8000/content/blog.md');
+        const response = await fetch(`${API_BASE_URL}/content/blog.md`);
         const text = await response.text();
         setMarkdown(text);
       } catch (error) {
@@ -33,7 +34,7 @@ const Blog: React.FC = () => {
           img: ({ node, ...props }) => (
             <img
               {...props}
-              src={props.src?.startsWith('data:') || props.src?.startsWith('http') ? props.src : `http://localhost:8000/content/${props.src}`}
+              src={props.src?.startsWith('data:') || props.src?.startsWith('http') ? props.src : `${API_BASE_URL}/content/${props.src}`}
               alt={props.alt || ''}
             />
           ),

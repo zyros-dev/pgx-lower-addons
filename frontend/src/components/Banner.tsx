@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 import './Banner.css';
 
 const Banner: React.FC = () => {
@@ -8,7 +9,7 @@ const Banner: React.FC = () => {
   useEffect(() => {
     const fetchVersion = async () => {
       try {
-        const response = await fetch('http://localhost:8000/version');
+        const response = await fetch(`${API_BASE_URL}/version`);
         const data = await response.json();
         setVersion(data.version);
       } catch (error) {

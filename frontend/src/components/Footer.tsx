@@ -1,4 +1,5 @@
 import React from 'react';
+import { API_BASE_URL } from '../config';
 import './Footer.css';
 
 const Footer: React.FC = () => {
@@ -6,11 +7,11 @@ const Footer: React.FC = () => {
     <footer className="footer">
       <div className="footer-content">
         <div className="footer-links">
-          <a href="http://localhost:8000/download/paper" target="_blank" rel="noopener noreferrer">
+          <a href={`${API_BASE_URL}/download/paper`} target="_blank" rel="noopener noreferrer">
             Download Paper
           </a>
           <span className="separator">|</span>
-          <a href="http://localhost:8000/download/slides" target="_blank" rel="noopener noreferrer">
+          <a href={`${API_BASE_URL}/download/slides`} target="_blank" rel="noopener noreferrer">
             Download Slides
           </a>
           <span className="separator">|</span>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Editor, { loader } from '@monaco-editor/react';
 import githubLight from 'monaco-themes/themes/GitHub.json';
+import { API_BASE_URL } from '../config';
 import './QueryPage.css';
 
 interface Output {
@@ -82,7 +83,7 @@ const QueryPage: React.FC = () => {
 
   const loadQuery = async (queryNumber: number) => {
     try {
-      const response = await fetch(`http://localhost:8000/resources/${queryNumber}.sql`);
+      const response = await fetch(`${API_BASE_URL}/resources/${queryNumber}.sql`);
       const sql = await response.text();
       setQuery(sql);
     } catch (error) {
@@ -93,7 +94,7 @@ const QueryPage: React.FC = () => {
   const executeQuery = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/query', {
+      const response = await fetch(`${API_BASE_URL}/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query }),
@@ -119,7 +120,7 @@ const QueryPage: React.FC = () => {
 
   const fetchPerformanceStats = async () => {
     try {
-      const response = await fetch('http://localhost:8000/stats/performance?limit=24');
+      const response = await fetch(`${API_BASE_URL}/stats/performance?limit=24`);
       const data = await response.json();
       setPerformanceStats(data.stats);
     } catch (error) {
