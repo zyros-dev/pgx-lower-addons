@@ -42,6 +42,6 @@ setup-ssl:
 	@echo "Setting up nginx and SSL (requires root)..."
 	@bash setup-ssl.sh
 
-deploy: setup-ssl serve
+deploy: stop setup-ssl serve
 	@echo "Deployment complete!"
 	@echo "Site available at https://pgx.zyros.dev"
