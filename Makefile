@@ -9,8 +9,9 @@ help:
 	@echo "  stop         - Stop all running containers"
 	@echo "  clean        - Clean build artifacts"
 	@echo "  report       - Build LaTeX report"
-	@echo "  setup-ssl    - Setup nginx and SSL (production only, requires root)"
-	@echo "  deploy       - Full deployment: setup SSL + serve (production only)"
+	@echo "  setup-nginx  - Setup nginx reverse proxy (production only, requires root)"
+	@echo "  get-ssl      - Get SSL certificate (run after serve, requires root)"
+	@echo "  deploy       - Full deployment: nginx + containers + SSL (production only)"
 
 install:
 	@echo "Setting up backend..."
@@ -38,10 +39,15 @@ clean:
 report:
 	cd pgx-lower-report && make
 
-setup-ssl:
-	@echo "Setting up nginx and SSL (requires root)..."
-	@bash setup-ssl.sh
+setup-nginx:
+	@echo "Setting up nginx (requires root)..."
+	@bash setup-nginx.sh
 
-deploy: stop setup-ssl serve
+get-ssl:
+	@echo "Getting SSL certificate (requires root)..."
+	@certbot --nginx -d pgx.zyros.dev --non-interactive --agree-tos --email zyros.dev@gmail.com
+	@systemctl enable certbot.timer
+
+deploy: stop setup-nginx serve get-ssl
 	@echo "Deployment complete!"
 	@echo "Site available at https://pgx.zyros.dev"
