@@ -100,3 +100,37 @@
   color: var(--text-secondary);
   font-style: italic;
 }
+
+@media (max-width: 768px) {
+  .markdown-page {
+    margin: 1rem auto;
+    padding: 0 1rem;
+  }
+
+  .markdown-content {
+    padding: 1.5rem;
+    font-size: 0.95rem;
+  }
+
+  .markdown-content h1 {
+    font-size: 1.75rem;
+  }
+
+  .markdown-content h2 {
+    font-size: 1.4rem;
+    margin-top: 2rem;
+  }
+
+  .markdown-content h3 {
+    font-size: 1.2rem;
+  }
+
+  .markdown-content pre {
+    padding: 1rem;
+    font-size: 0.85rem;
+  }
+
+  .markdown-content img {
+    margin: 1rem 0;
+  }
+}

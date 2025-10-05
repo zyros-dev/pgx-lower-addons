@@ -47,3 +47,26 @@
   color: var(--white);
   background-color: var(--primary);
 }
+
+@media (max-width: 768px) {
+  .banner-content {
+    padding: 1rem;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .banner-logo h1 {
+    font-size: 1.25rem;
+  }
+
+  .banner-links {
+    gap: 1rem;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .banner-links a {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+}

@@ -433,3 +433,67 @@
 .chart-bar-max {
   background: linear-gradient(90deg, #c53030, #9b2c2c);
 }
+
+@media (max-width: 768px) {
+  .query-page {
+    margin: 1rem auto;
+    padding: 0 1rem;
+  }
+
+  .editor-section,
+  .results-section,
+  .performance-section {
+    padding: 1rem;
+  }
+
+  .tpch-buttons {
+    gap: 0.25rem;
+  }
+
+  .tpch-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    min-width: 45px;
+  }
+
+  .run-button {
+    width: 100%;
+    margin-top: 1rem;
+  }
+
+  .database-card {
+    padding: 1rem;
+  }
+
+  .database-header h3 {
+    font-size: 1.1rem;
+  }
+
+  .output-section {
+    padding: 0.75rem;
+  }
+
+  .output-title {
+    font-size: 0.9rem;
+  }
+
+  .performance-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .stat-card {
+    padding: 0.75rem;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+  }
+
+  .stat-value {
+    font-size: 1.1rem;
+  }
+
+  .chart-container {
+    overflow-x: auto;
+  }
+}
