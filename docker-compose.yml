@@ -75,11 +75,87 @@ services:
       - "9090:9090"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/recording_rules.yml:/etc/prometheus/recording_rules.yml
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=14d'
+      - '--storage.tsdb.retention.time=7d'
+      - '--storage.tsdb.min-block-duration=2h'
+      - '--storage.tsdb.max-block-duration=2h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    networks:
+      - pgx-network
+
+  thanos-sidecar:
+    image: quay.io/thanos/thanos:latest
+    container_name: pgx-lower-thanos-sidecar
+    command:
+      - 'sidecar'
+      - '--tsdb.path=/prometheus'
+      - '--prometheus.url=http://prometheus:9090'
+      - '--objstore.config-file=/etc/thanos/bucket.yml'
+      - '--grpc-address=0.0.0.0:10901'
+      - '--http-address=0.0.0.0:10902'
+    volumes:
+      - prometheus_data:/prometheus
+      - ./monitoring/thanos-bucket.yml:/etc/thanos/bucket.yml
+      - thanos_data:/thanos
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - pgx-network
+
+  thanos-store:
+    image: quay.io/thanos/thanos:latest
+    container_name: pgx-lower-thanos-store
+    command:
+      - 'store'
+      - '--data-dir=/thanos'
+      - '--objstore.config-file=/etc/thanos/bucket.yml'
+      - '--grpc-address=0.0.0.0:10901'
+      - '--http-address=0.0.0.0:10902'
+    volumes:
+      - ./monitoring/thanos-bucket.yml:/etc/thanos/bucket.yml
+      - thanos_data:/thanos
+    restart: unless-stopped
+    networks:
+      - pgx-network
+
+  thanos-compactor:
+    image: quay.io/thanos/thanos:latest
+    container_name: pgx-lower-thanos-compactor
+    command:
+      - 'compact'
+      - '--data-dir=/thanos'
+      - '--objstore.config-file=/etc/thanos/bucket.yml'
+      - '--retention.resolution-raw=30d'
+      - '--retention.resolution-5m=1y'
+      - '--retention.resolution-1h=5y'
+      - '--wait'
+    volumes:
+      - ./monitoring/thanos-bucket.yml:/etc/thanos/bucket.yml
+      - thanos_data:/thanos
+    restart: unless-stopped
+    networks:
+      - pgx-network
+
+  thanos-query:
+    image: quay.io/thanos/thanos:latest
+    container_name: pgx-lower-thanos-query
+    command:
+      - 'query'
+      - '--grpc-address=0.0.0.0:10901'
+      - '--http-address=0.0.0.0:10902'
+      - '--store=thanos-sidecar:10901'
+      - '--store=thanos-store:10901'
+    ports:
+      - "10902:10902"
+    depends_on:
+      - thanos-sidecar
+      - thanos-store
     restart: unless-stopped
     networks:
       - pgx-network
@@ -100,9 +176,22 @@ services:
     image: nginx/nginx-prometheus-exporter:latest
     container_name: pgx-lower-nginx-exporter
     command:
-      - '-nginx.scrape-uri=http://host.docker.internal:80/nginx_status'
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - '--nginx.scrape-uri=http://127.0.0.1:80/nginx_status'
+    network_mode: host
+    restart: unless-stopped
+
+  mtail:
+    image: ghcr.io/google/mtail:latest
+    container_name: pgx-lower-mtail
+    command:
+      - '--progs=/etc/mtail'
+      - '--logs=/var/log/nginx/access.log'
+      - '--port=3903'
+    volumes:
+      - /var/log/nginx:/var/log/nginx:ro
+      - ./monitoring/mtail:/etc/mtail:ro
+    ports:
+      - "3903:3903"
     restart: unless-stopped
     networks:
       - pgx-network
@@ -132,6 +221,7 @@ volumes:
   postgres_data:
   prometheus_data:
   grafana_data:
+  thanos_data:
 
 networks:
   pgx-network:

@@ -5,5 +5,12 @@ datasources:
     type: prometheus
     access: proxy
     url: http://prometheus:9090
+    isDefault: false
+    editable: false
+
+  - name: Thanos
+    type: prometheus
+    access: proxy
+    url: http://thanos-query:10902
     isDefault: true
     editable: false

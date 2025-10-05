@@ -1,0 +1,48 @@
+groups:
+  - name: aggregations_1m
+    interval: 1m
+    rules:
+      # 1-minute aggregations
+      - record: http_requests_total:rate1m
+        expr: rate(http_requests_total[1m])
+
+      - record: http_request_duration_seconds:avg1m
+        expr: avg_over_time(http_request_duration_seconds[1m])
+
+      - record: node_cpu_usage:avg1m
+        expr: avg_over_time((1 - rate(node_cpu_seconds_total{mode="idle"}[1m]))[1m:15s])
+
+      - record: node_memory_usage:avg1m
+        expr: avg_over_time((1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))[1m:15s])
+
+  - name: aggregations_1h
+    interval: 1h
+    rules:
+      # 1-hour aggregations
+      - record: http_requests_total:rate1h
+        expr: rate(http_requests_total[1h])
+
+      - record: http_request_duration_seconds:avg1h
+        expr: avg_over_time(http_request_duration_seconds[1h])
+
+      - record: node_cpu_usage:avg1h
+        expr: avg_over_time((1 - rate(node_cpu_seconds_total{mode="idle"}[1h]))[1h:1m])
+
+      - record: node_memory_usage:avg1h
+        expr: avg_over_time((1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))[1h:1m])
+
+  - name: aggregations_1d
+    interval: 1d
+    rules:
+      # 1-day aggregations
+      - record: http_requests_total:rate1d
+        expr: rate(http_requests_total[1d])
+
+      - record: http_request_duration_seconds:avg1d
+        expr: avg_over_time(http_request_duration_seconds[1d])
+
+      - record: node_cpu_usage:avg1d
+        expr: avg_over_time((1 - rate(node_cpu_seconds_total{mode="idle"}[1d]))[1d:1h])
+
+      - record: node_memory_usage:avg1d
+        expr: avg_over_time((1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))[1d:1h])
