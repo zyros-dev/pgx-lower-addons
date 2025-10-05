@@ -1,8 +1,4 @@
 counter http_requests_total by method, status, endpoint
-counter http_request_bytes_total by endpoint
-counter http_response_bytes_total by endpoint
-gauge http_request_duration_seconds by endpoint
-counter unique_ips by endpoint
 
 /^/ +
 /(?P<remote_addr>[0-9\.]+) / +
@@ -16,12 +12,7 @@ counter unique_ips by endpoint
 /(?P<status>\d+) / +
 /(?P<body_bytes_sent>\d+) / +
 /"(?P<http_referer>[^"]*)" / +
-/"(?P<http_user_agent>[^"]*)" / +
-/"(?P<request_time>[\d\.]+)"/ +
+/"(?P<http_user_agent>[^"]*)"/ +
 /$/ {
   http_requests_total[$method][$status][$endpoint]++
-  http_request_bytes_total[$endpoint] += $body_bytes_sent
-  http_response_bytes_total[$endpoint] += $body_bytes_sent
-  http_request_duration_seconds[$endpoint] = $request_time
-  unique_ips[$endpoint]++
 }

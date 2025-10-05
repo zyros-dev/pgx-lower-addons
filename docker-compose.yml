@@ -149,8 +149,8 @@ services:
       - 'query'
       - '--grpc-address=0.0.0.0:10901'
       - '--http-address=0.0.0.0:10902'
-      - '--store=thanos-sidecar:10901'
-      - '--store=thanos-store:10901'
+      - '--endpoint=thanos-sidecar:10901'
+      - '--endpoint=thanos-store:10901'
     ports:
       - "10902:10902"
     depends_on:
