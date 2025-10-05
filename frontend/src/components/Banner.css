@@ -15,6 +15,12 @@
   padding: 1rem 2rem;
 }
 
+.banner-icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
 .banner-logo h1 {
   margin: 0;
   color: var(--white);
@@ -53,6 +59,11 @@
     padding: 1rem;
     flex-direction: column;
     gap: 1rem;
+  }
+
+  .banner-icon {
+    width: 32px;
+    height: 32px;
   }
 
   .banner-logo h1 {

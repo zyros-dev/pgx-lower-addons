@@ -23,7 +23,8 @@ const Banner: React.FC = () => {
     <nav className="banner">
       <div className="banner-content">
         <div className="banner-logo">
-          <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Link to="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <img src="/logo192.png" alt="pgx-lower logo" className="banner-icon" />
             <h1>pgx-lower {version && <span className="version">v{version}</span>}</h1>
           </Link>
         </div>
