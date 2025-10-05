@@ -89,7 +89,7 @@ services:
       - pgx-network
 
   thanos-sidecar:
-    image: quay.io/thanos/thanos:latest
+    image: quay.io/thanos/thanos:v0.37.4
     container_name: pgx-lower-thanos-sidecar
     command:
       - 'sidecar'
