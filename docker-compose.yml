@@ -68,21 +68,59 @@ services:
     networks:
       - pgx-network
 
-  health-monitor:
-    build:
-      context: ./health-monitor
-      dockerfile: Dockerfile
-    container_name: pgx-lower-health
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pgx-lower-prometheus
     ports:
-      - "8001:8001"
+      - "9090:9090"
     volumes:
-      - ./data/health:/data
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=14d'
     restart: unless-stopped
+    networks:
+      - pgx-network
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: pgx-lower-node-exporter
+    command:
+      - '--path.rootfs=/host'
+    pid: host
+    volumes:
+      - '/:/host:ro,rslave'
+    restart: unless-stopped
+    networks:
+      - pgx-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pgx-lower-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      - ./monitoring/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
+      - ./monitoring/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    restart: unless-stopped
+    depends_on:
+      - prometheus
     networks:
       - pgx-network
 
 volumes:
   postgres_data:
+  prometheus_data:
+  grafana_data:
 
 networks:
   pgx-network:
