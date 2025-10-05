@@ -1,4 +1,4 @@
-.PHONY: help serve stop clean install report
+.PHONY: help serve stop clean install report setup-ssl deploy
 
 help:
 	@echo "pgx-lower-addons Makefile"
@@ -9,6 +9,8 @@ help:
 	@echo "  stop         - Stop all running containers"
 	@echo "  clean        - Clean build artifacts"
 	@echo "  report       - Build LaTeX report"
+	@echo "  setup-ssl    - Setup nginx and SSL (production only, requires root)"
+	@echo "  deploy       - Full deployment: setup SSL + serve (production only)"
 
 install:
 	@echo "Setting up backend..."
@@ -35,3 +37,11 @@ clean:
 
 report:
 	cd pgx-lower-report && make
+
+setup-ssl:
+	@echo "Setting up nginx and SSL (requires root)..."
+	@bash setup-ssl.sh
+
+deploy: setup-ssl serve
+	@echo "Deployment complete!"
+	@echo "Site available at https://pgx.zyros.dev"

@@ -26,6 +26,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://localhost",
+        "http://pgx.zyros.dev",
         "https://zyros.dev",
         "https://pgx.zyros.dev"
     ],
