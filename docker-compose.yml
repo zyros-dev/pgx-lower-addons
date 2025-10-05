@@ -75,6 +75,8 @@ services:
     container_name: pgx-lower-health
     ports:
       - "8001:8001"
+    volumes:
+      - ./data/health:/data
     restart: unless-stopped
     networks:
       - pgx-network
