@@ -61,5 +61,6 @@ yarn-error.log*
 backend/database/pgx_lower.db
 data/database/pgx_lower.db
 
-# Data directories
 data/
+monitoring/dashboards/
+monitoring/mtail/nginx.mtail
