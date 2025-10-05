@@ -89,7 +89,7 @@ services:
       - pgx-network
 
   thanos-sidecar:
-    image: quay.io/thanos/thanos:v0.37.4
+    image: quay.io/thanos/thanos:v0.39.2
     container_name: pgx-lower-thanos-sidecar
     command:
       - 'sidecar'
@@ -109,7 +109,7 @@ services:
       - pgx-network
 
   thanos-store:
-    image: quay.io/thanos/thanos:latest
+    image: quay.io/thanos/thanos:v0.39.2
     container_name: pgx-lower-thanos-store
     command:
       - 'store'
@@ -125,7 +125,7 @@ services:
       - pgx-network
 
   thanos-compactor:
-    image: quay.io/thanos/thanos:latest
+    image: quay.io/thanos/thanos:v0.39.2
     container_name: pgx-lower-thanos-compactor
     command:
       - 'compact'
@@ -143,7 +143,7 @@ services:
       - pgx-network
 
   thanos-query:
-    image: quay.io/thanos/thanos:latest
+    image: quay.io/thanos/thanos:v0.39.2
     container_name: pgx-lower-thanos-query
     command:
       - 'query'
