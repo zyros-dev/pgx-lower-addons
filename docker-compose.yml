@@ -96,6 +96,17 @@ services:
     networks:
       - pgx-network
 
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    container_name: pgx-lower-nginx-exporter
+    command:
+      - '-nginx.scrape-uri=http://host.docker.internal:80/nginx_status'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - pgx-network
+
   grafana:
     image: grafana/grafana:latest
     container_name: pgx-lower-grafana
