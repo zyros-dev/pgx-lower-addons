@@ -1,4 +1,5 @@
 counter http_requests_total by method, status, endpoint
+histogram http_request_duration_seconds buckets 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10 by endpoint
 
 /^/ +
 /(?P<remote_addr>[0-9\.]+) / +
@@ -12,7 +13,12 @@ counter http_requests_total by method, status, endpoint
 /(?P<status>\d+) / +
 /(?P<body_bytes_sent>\d+) / +
 /"(?P<http_referer>[^"]*)" / +
-/"(?P<http_user_agent>[^"]*)"/ +
+/"(?P<http_user_agent>[^"]*)" / +
+/(?P<request_time>[\d\.]+)/ +
 /$/ {
-  http_requests_total[$method][$status][$endpoint]++
+  # Exclude health.zyros.dev traffic (Grafana requests)
+  $http_referer !~ /health\.zyros\.dev/ {
+    http_requests_total[$method][$status][$endpoint]++
+    http_request_duration_seconds[$endpoint] = $request_time
+  }
 }
