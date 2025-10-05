@@ -1,10 +1,10 @@
 counter http_requests_total by method, status, endpoint
 histogram http_request_duration_seconds buckets 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10 by endpoint
 counter page_views_total
-counter unique_ips by ip
+counter requests_by_ip by client_ip
 
 /^/ +
-/(?P<remote_addr>[0-9\.]+) / +
+/(?P<ip>[^ ]+) / +
 /- / +
 /(?P<remote_user>\S+) / +
 /\[(?P<time_local>[^\]]+)\] / +
@@ -15,13 +15,17 @@ counter unique_ips by ip
 /(?P<status>\d+) / +
 /(?P<body_bytes_sent>\d+) / +
 /"(?P<http_referer>[^"]*)" / +
-/"(?P<http_user_agent>[^"]*)" / +
-/(?P<request_time>[\d\.]+)/ +
+/"(?P<http_user_agent>[^"]*)"/ +
+/( (?P<request_time>[\d\.]+))?/ +
 /$/ {
   # Exclude health.zyros.dev traffic (Grafana requests)
   $http_referer !~ /health\.zyros\.dev/ {
     http_requests_total[$method][$status][$endpoint]++
-    http_request_duration_seconds[$endpoint] = $request_time
+
+    # Only record latency if request_time is present
+    $request_time != "" {
+      http_request_duration_seconds[$endpoint] = $request_time
+    }
 
     # Track page views (successful GET/POST requests to HTML pages)
     $status >= 200 && $status < 400 {
@@ -30,7 +34,7 @@ counter unique_ips by ip
       }
     }
 
-    # Track unique IPs
-    unique_ips[$remote_addr]++
+    # Track requests per IP
+    requests_by_ip[$ip]++
   }
 }

@@ -60,7 +60,7 @@
             "type": "prometheus",
             "uid": null
           },
-          "expr": "count(unique_ips)",
+          "expr": "count(requests_by_ip)",
           "refId": "A"
         }
       ],
@@ -119,7 +119,7 @@
             "type": "prometheus",
             "uid": null
           },
-          "expr": "count(count_over_time(unique_ips[24h]))",
+          "expr": "count(max_over_time(requests_by_ip[24h]))",
           "refId": "A"
         }
       ],
