@@ -1,5 +1,7 @@
 counter http_requests_total by method, status, endpoint
 histogram http_request_duration_seconds buckets 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10 by endpoint
+counter page_views_total
+counter unique_ips by ip
 
 /^/ +
 /(?P<remote_addr>[0-9\.]+) / +
@@ -20,5 +22,15 @@ histogram http_request_duration_seconds buckets 0.005, 0.01, 0.025, 0.05, 0.1, 0
   $http_referer !~ /health\.zyros\.dev/ {
     http_requests_total[$method][$status][$endpoint]++
     http_request_duration_seconds[$endpoint] = $request_time
+
+    # Track page views (successful GET/POST requests to HTML pages)
+    $status >= 200 && $status < 400 {
+      $endpoint !~ /\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|map|json)$/ {
+        page_views_total++
+      }
+    }
+
+    # Track unique IPs
+    unique_ips[$remote_addr]++
   }
 }
