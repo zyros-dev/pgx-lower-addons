@@ -45,7 +45,10 @@ setup-nginx:
 
 get-ssl:
 	@echo "Getting SSL certificate (requires root)..."
-	@certbot --nginx -d pgx.zyros.dev --non-interactive --agree-tos --email zyros.dev@gmail.com
+	@systemctl stop nginx
+	@certbot certonly --standalone -d pgx.zyros.dev --non-interactive --agree-tos --email zyros.dev@gmail.com
+	@cp nginx-host.conf /etc/nginx/sites-available/pgx.zyros.dev
+	@systemctl start nginx
 	@systemctl enable certbot.timer
 
 deploy: stop setup-nginx serve get-ssl
