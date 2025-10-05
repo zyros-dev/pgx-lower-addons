@@ -26,6 +26,12 @@ serve:
 	@docker-compose down
 	@echo "Building and starting Docker containers..."
 	@docker-compose up -d --build
+	@echo ""
+	@echo "Services running:"
+	@echo "  Frontend:       http://localhost:3001"
+	@echo "  Backend API:    http://localhost:8000"
+	@echo "  Health Monitor: http://localhost:8001"
+	@echo "  PostgreSQL:     localhost:5433"
 
 stop:
 	@echo "Stopping all containers..."

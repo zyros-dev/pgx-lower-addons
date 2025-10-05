@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: pgxpassword
       POSTGRES_DB: pgxdb
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./resources/init_tpch.sql:/docker-entrypoint-initdb.d/init_tpch.sql
@@ -64,6 +64,17 @@ services:
       - postgres
       - backend
       - frontend
+    restart: unless-stopped
+    networks:
+      - pgx-network
+
+  health-monitor:
+    build:
+      context: ./health-monitor
+      dockerfile: Dockerfile
+    container_name: pgx-lower-health
+    ports:
+      - "8001:8001"
     restart: unless-stopped
     networks:
       - pgx-network
