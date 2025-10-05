@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import remarkGfm from 'remark-gfm';
 import { API_BASE_URL } from '../config';
+import BrandingFooter from '../components/BrandingFooter';
 import 'highlight.js/styles/tokyo-night-light.css';
 import './MarkdownPage.css';
 
@@ -43,6 +44,7 @@ const Blog: React.FC = () => {
         {markdown}
       </ReactMarkdown>
       </div>
+      <BrandingFooter />
     </div>
   );
 };

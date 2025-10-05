@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Editor, { loader } from '@monaco-editor/react';
 import githubLight from 'monaco-themes/themes/GitHub.json';
 import { API_BASE_URL } from '../config';
+import BrandingFooter from '../components/BrandingFooter';
 import './QueryPage.css';
 
 interface Output {
@@ -411,6 +412,7 @@ const QueryPage: React.FC = () => {
           </div>
         </>
       )}
+      <BrandingFooter />
     </div>
   );
 };

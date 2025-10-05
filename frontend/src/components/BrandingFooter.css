@@ -1,0 +1,38 @@
+.branding-footer {
+  background-color: white;
+  padding: 3rem 2rem;
+  margin-top: 4rem;
+  border-top: 2px solid var(--separator);
+}
+
+.branding-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.branding-logo {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  border: 3px solid var(--primary);
+  border-radius: 12px;
+  padding: 1rem;
+  background-color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+  .branding-footer {
+    padding: 2rem 1rem;
+    margin-top: 2rem;
+  }
+
+  .branding-logo {
+    width: 150px;
+    height: 150px;
+    border-width: 2px;
+  }
+}
