@@ -13,6 +13,7 @@ import asyncio
 import debug
 from datetime import datetime, timedelta
 from collections import defaultdict
+from analytics import analytics
 
 CONTENT_DIR = Path(__file__).parent / "content"
 REPORT_DIR = Path(__file__).parent / "pgx-lower-report"
@@ -89,6 +90,8 @@ async def startup():
 async def shutdown():
     scheduler.shutdown()
     logger.info("Scheduler stopped")
+    await analytics.close()
+    logger.info("Analytics client closed")
 
 @app.get("/")
 async def root():
@@ -139,6 +142,12 @@ async def download_paper(request: Request):
 
     logger.info(f"Paper download request from {ip_address}")
 
+    asyncio.create_task(analytics.track_event(
+        "download",
+        {"content_type": "paper", "ip_address": ip_address},
+        client_id=ip_address
+    ))
+
     return FileResponse(
         pdf_path,
         media_type="application/pdf",
@@ -156,6 +165,12 @@ async def download_slides(request: Request):
         raise HTTPException(status_code=404, detail="Slides not found")
 
     logger.info(f"Slides download request from {ip_address}")
+
+    asyncio.create_task(analytics.track_event(
+        "download",
+        {"content_type": "slides", "ip_address": ip_address},
+        client_id=ip_address
+    ))
 
     return FileResponse(
         slides_path,
@@ -196,6 +211,12 @@ async def execute_query(query_request: QueryRequest, request: Request):
             raise HTTPException(status_code=429, detail=f"Rate limit exceeded. Maximum {limit} {'cached' if is_cached else 'uncached'} queries per minute.")
 
         logger.info(f"Query request from {ip_address} - request_id: {request_id} - cached: {is_cached}")
+
+        asyncio.create_task(analytics.track_event(
+            "query_execution",
+            {"cached": is_cached, "ip_address": ip_address},
+            client_id=ip_address
+        ))
 
         if cached_result:
             logger.info(f"Cache hit for request_id: {request_id}")

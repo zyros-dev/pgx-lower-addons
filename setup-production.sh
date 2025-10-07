@@ -85,8 +85,39 @@ if [ ! -f /etc/logrotate.d/pgx-lower ]; then
     notifempty
     create 0640 root root
 }
+/var/log/nginx/*.log {
+    daily
+    rotate 3
+    compress
+    delaycompress
+    missingok
+    notifempty
+    sharedscripts
+    postrotate
+        [ -f /var/run/nginx.pid ] && kill -USR1 `cat /var/run/nginx.pid`
+    endscript
+}
 EOFLOG
     echo "Log rotation configured"
+fi
+
+# 5. Clean up existing nginx logs (one-time)
+if [ -f /var/log/nginx/access.log ]; then
+    echo "Truncating existing nginx logs..."
+    truncate -s 0 /var/log/nginx/access.log
+    truncate -s 0 /var/log/nginx/error.log
+    echo "Nginx logs truncated"
+fi
+
+# 6. Update nginx config and reload
+NGINX_LOG_CONFIG="/etc/nginx/conf.d/log-format.conf"
+if [ -f "$NGINX_LOG_CONFIG" ]; then
+    if grep -q "access_log.*timed" "$NGINX_LOG_CONFIG"; then
+        echo "Updating nginx logging configuration..."
+        cp /root/pgx-lower-addons/nginx-log-format.conf "$NGINX_LOG_CONFIG"
+        nginx -t && systemctl reload nginx
+        echo "Nginx logging disabled"
+    fi
 fi
 
 echo "Production server setup complete!"
