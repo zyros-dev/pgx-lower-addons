@@ -1,4 +1,4 @@
-# I rewrote PostgreSQL's execution engine and made it 3x faster while maintaining ACID
+# I rewrote PostgreSQL's execution engine and made it 3x faster while maintaining ACID compliance!
 
 When PostgreSQL was created (1996), people primarily used hard drives with much slower read/write speeds. If you flick through databasing textbooks, we calculate the time complexity based on the read/writes of the disk, and the time in the CPU or RAM is considered completely free. However, with the advent of NVME drives, other SSDs, larger CPU caches and higher RAM, this isn't an entirely valid method of measuring time complexity.
 
@@ -13,3 +13,6 @@ Typically databases use a volcano execution model, which parses your SQL into a 
 (this image is from [Just-in-time Compilation in Vectorized Query Execution](https://homepages.cwi.nl/~boncz/msc/2011-JuliuszSompolski.pdf))
 
 Each node represents a function, and then an iterator is created where you can call `node.next()` for the next tuple value.
+
+Read more at:
+* [The development blog post](https://pgx.zyros.dev/blog), which walks through interesting subproblems I encountered more casually.
