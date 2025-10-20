@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "README.md",
+                "file": "blog.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "README"
+              "title": "blog"
             }
           }
         ]
@@ -171,8 +171,16 @@
   },
   "active": "db6a5cd74ea71f23",
   "lastOpenFiles": [
-    "blog.md",
+    "Pasted image 20251021083524.png",
+    "Pasted image 20251021083326.png",
+    "Pasted image 20251021083140.png",
+    "Pasted image 20251021083041.png",
+    "Pasted image 20251021082541.png",
+    "Pasted image 20251021082049.png",
+    "Pasted image 20251021081152.png",
     "README.md",
+    "example-diagram.png",
+    "blog.md",
     "README.md.tmp.25587.1759608295601",
     "README.md.tmp.25587.1759608252391",
     "README.md.tmp.25587.1759608014039",
@@ -182,8 +190,6 @@
     "README.md.tmp.25587.1759606915487",
     "Pasted image 20251005061024.png",
     "Pasted image 20251005061009.png",
-    "Pasted image 20251005060834.png",
-    "Pasted image 20251005060709.png",
-    "example-diagram.svg"
+    "Pasted image 20251005060834.png"
   ]
 }

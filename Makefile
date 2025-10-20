@@ -22,6 +22,7 @@ install:
 	@echo "Done!"
 
 serve:
+	@bash fix-dns.sh 2>/dev/null || true
 	@bash setup-production.sh 2>/dev/null || true
 	@echo "Stopping any running containers..."
 	@docker-compose down
