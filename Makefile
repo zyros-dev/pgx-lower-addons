@@ -26,8 +26,10 @@ serve:
 	@bash setup-production.sh 2>/dev/null || true
 	@echo "Stopping any running containers..."
 	@docker-compose down
-	@echo "Building and starting Docker containers..."
-	@docker-compose up -d --build
+	@echo "Building Docker containers with host network..."
+	@docker-compose build --network host
+	@echo "Starting Docker containers..."
+	@docker-compose up -d
 	@echo ""
 	@echo "Services running:"
 	@echo "  Frontend:       http://localhost:3001"
