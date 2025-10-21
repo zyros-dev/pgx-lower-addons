@@ -2,6 +2,10 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
+# Fix DNS for build-time package downloads
+RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf && \
+    echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+
 # Install build dependencies for asyncpg
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
