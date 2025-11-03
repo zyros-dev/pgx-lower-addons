@@ -92,7 +92,7 @@ RUN if [ ! -f CMakeLists.txt ]; then \
     fi && \
     mkdir -p build-release && \
     cd build-release && \
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_ONLY_EXTENSION=ON .. && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local/pgsql -DBUILD_ONLY_EXTENSION=ON .. && \
     cmake --build . && \
     cmake --install .
 
