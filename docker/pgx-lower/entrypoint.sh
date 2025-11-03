@@ -11,6 +11,13 @@ else
     echo "listen_addresses = '*'" >> /etc/postgresql/16/main/postgresql.conf || true
 fi
 
+# Configure port 54326
+if grep -q '^port' /etc/postgresql/16/main/postgresql.conf 2>/dev/null; then
+    sed -i "s/^port.*/port = 54326/" /etc/postgresql/16/main/postgresql.conf || true
+else
+    echo "port = 54326" >> /etc/postgresql/16/main/postgresql.conf || true
+fi
+
 # Add trust entry for Docker network if not present
 HBA_FILE=/etc/postgresql/16/main/pg_hba.conf
 if [ -f "$HBA_FILE" ]; then

@@ -26,11 +26,10 @@ services:
     container_name: pgx-lower-main
     ports:
       - "127.0.0.1:54326:54326"
-    command: postgres -p 54326
     volumes:
       - pgx_lower_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h localhost -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -h localhost -p 54326 -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
