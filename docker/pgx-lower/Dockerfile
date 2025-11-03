@@ -83,9 +83,13 @@ ENV LD_LIBRARY_PATH="/usr/local/pgsql/lib:/usr/lib/llvm-${LLVM_VERSION}/lib:${LD
 ENV MLIR_DIR="/usr/lib/llvm-${LLVM_VERSION}/lib/cmake/mlir"
 ENV LLVM_DIR="/usr/lib/llvm-${LLVM_VERSION}/lib/cmake/llvm"
 
-# Clone and build pgx-lower
+# Copy pgx-lower source from host and build extension
 WORKDIR /build
-RUN git clone https://github.com/zyrosdev/pgx-lower.git . && \
+COPY ../../../pgx-lower . || true
+RUN if [ ! -f CMakeLists.txt ]; then \
+        echo "ERROR: pgx-lower source not found. Make sure ~/repos/pgx-lower exists."; \
+        exit 1; \
+    fi && \
     mkdir -p build-release && \
     cd build-release && \
     cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_ONLY_EXTENSION=ON .. && \
