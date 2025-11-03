@@ -25,7 +25,8 @@ services:
     image: zyrosdev/pgx-lower-addons-pgx-lower:latest
     container_name: pgx-lower-main
     ports:
-      - "127.0.0.1:54326:5432"
+      - "127.0.0.1:54326:54326"
+    command: postgres -p 54326
     volumes:
       - pgx_lower_data:/var/lib/postgresql/data
     healthcheck:
@@ -48,7 +49,7 @@ services:
     environment:
       - DATABASE_PATH=/data/database/pgx_lower.db
       - LOG_PATH=/data/logs
-      - PGX_LOWER_HOST=host.docker.internal
+      - PGX_LOWER_HOST=pgx-lower
       - PGX_LOWER_PORT=54326
       - PGX_LOWER_USER=postgres
       - PGX_LOWER_PASSWORD=
