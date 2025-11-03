@@ -237,34 +237,75 @@ async def execute_query(query_request: QueryRequest, request: Request):
             logger.info(f"Cache hit for request_id: {request_id}")
             return {"cached": True, "result": cached_result}
 
-        logger.info(f"Cache miss for request_id: {request_id}, executing query")
+        logger.info(f"Cache miss for request_id: {request_id}, executing query on both databases")
 
-        postgres_result = await postgres_connector.run(query_request.query)
+        postgres_task = postgres_connector.run(query_request.query)
+        pgx_lower_task = execute_pgx_lower_query(query_request.query)
 
-        await log_query_execution(
-            query_request.query,
-            postgres_result.database,
-            postgres_result.latency_ms
+        postgres_result, pgx_lower_result = await asyncio.gather(
+            postgres_task,
+            pgx_lower_task,
+            return_exceptions=True
         )
 
-        result = {
-            "main_display": f"Query executed successfully against {postgres_result.database}.",
-            "results": [
+        results = []
+
+        if not isinstance(postgres_result, Exception):
+            await log_query_execution(
+                query_request.query,
+                postgres_result.database,
+                postgres_result.latency_ms
+            )
+            results.append({
+                "database": postgres_result.database,
+                "version": postgres_result.version,
+                "cached": cached_result is not None,
+                "latency_ms": postgres_result.latency_ms,
+                "outputs": [
+                    {
+                        "content": output.content,
+                        "title": output.title,
+                        "latency_ms": output.latency_ms
+                    }
+                    for output in postgres_result.outputs
+                ]
+            })
+        else:
+            logger.warning(f"PostgreSQL query failed: {str(postgres_result)}")
+
+        if not isinstance(pgx_lower_result, Exception):
+            ir_outputs = [
                 {
-                    "database": postgres_result.database,
-                    "version": postgres_result.version,
-                    "cached": cached_result is not None,
-                    "latency_ms": postgres_result.latency_ms,
-                    "outputs": [
-                        {
-                            "content": output.content,
-                            "title": output.title,
-                            "latency_ms": output.latency_ms
-                        }
-                        for output in postgres_result.outputs
-                    ]
+                    "content": pgx_lower_result["query_results"]["content"],
+                    "title": "Query Results",
+                    "latency_ms": None
                 }
             ]
+            # Add IR stages
+            for ir_stage in pgx_lower_result.get("ir_stages", []):
+                ir_outputs.append({
+                    "content": ir_stage["content"],
+                    "title": f"IR: {ir_stage['stage']}",
+                    "latency_ms": None
+                })
+
+            results.append({
+                "database": "pgx-lower",
+                "version": f"PostgreSQL 16 with pgx-lower",
+                "cached": False,
+                "latency_ms": 0,
+                "outputs": ir_outputs
+            })
+        else:
+            logger.warning(f"pgx-lower query failed: {str(pgx_lower_result)}")
+
+        main_display = "Query executed successfully."
+        if results:
+            main_display = f"Query executed successfully against {len(results)} database(s)."
+
+        result = {
+            "main_display": main_display,
+            "results": results
         }
 
         await cache_query(request_id, query_request.query, json.dumps(result))
