@@ -8,6 +8,8 @@ from pathlib import Path
 from database import init_db, log_user_request, get_cached_query, cache_query, log_query_execution, compute_hourly_stats, get_performance_stats, VERSION
 from logger import logger
 from db_connectors.postgres import PostgresConnector
+from db_connectors.pgx_lower_ir import PgxLowerIRConnector
+from pgx_lower_query import execute_pgx_lower_query, shutdown_executor
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import asyncio
 import debug
@@ -48,6 +50,7 @@ class DebugRequest(BaseModel):
     content: str = ""
 
 postgres_connector = PostgresConnector()
+pgx_lower_ir_connector = PgxLowerIRConnector()
 scheduler = AsyncIOScheduler()
 
 rate_limit_store = defaultdict(lambda: {"cached": [], "uncached": []})
@@ -81,6 +84,14 @@ async def startup():
     debug.init_debug()
     await postgres_connector.connect()
     logger.info("Connected to PostgreSQL")
+
+    # Connect to pgx-lower IR connector
+    try:
+        await pgx_lower_ir_connector.connect()
+        logger.info("Connected to pgx-lower with IR extraction")
+    except Exception as e:
+        logger.warning(f"Failed to connect to pgx-lower IR connector: {str(e)}. IR extraction will not be available.")
+
     scheduler.add_job(compute_hourly_stats, 'cron', minute=0, id='hourly_stats')
     scheduler.start()
     logger.info("Scheduler started: hourly stats computation at minute 0 of every hour")
@@ -90,6 +101,10 @@ async def startup():
 async def shutdown():
     scheduler.shutdown()
     logger.info("Scheduler stopped")
+    await pgx_lower_ir_connector.disconnect()
+    logger.info("Disconnected from pgx-lower IR connector")
+    await shutdown_executor()
+    logger.info("Disconnected pgx-lower query executor")
     await analytics.close()
     logger.info("Analytics client closed")
 
@@ -259,6 +274,127 @@ async def execute_query(query_request: QueryRequest, request: Request):
     except Exception as e:
         logger.error(f"Error processing query from {ip_address}: {str(e)}")
         raise
+
+@app.post("/query/ir")
+async def execute_query_with_ir(query_request: QueryRequest, request: Request):
+    """
+    Execute query on pgx-lower with MLIR IR extraction.
+
+    Returns both query results and all IR stages from the compilation pipeline:
+    - RelAlg MLIR
+    - DB+DSA+Util MLIR
+    - Standard MLIR
+    - LLVM IR
+    """
+    ip_address = request.client.host if request.client else "unknown"
+
+    if len(query_request.query) > MAX_QUERY_LENGTH:
+        raise HTTPException(status_code=400, detail=f"Query too long. Maximum {MAX_QUERY_LENGTH} characters.")
+
+    try:
+        logger.info(f"IR extraction request from {ip_address}: {query_request.query[:100]}...")
+
+        # Execute query with IR extraction
+        result = await execute_pgx_lower_query(query_request.query)
+
+        # Format response
+        response = {
+            "query": result["query"],
+            "database": result["database"],
+            "query_results": result["query_results"],
+            "ir_stages": result["ir_stages"],
+            "num_stages": len(result["ir_stages"])
+        }
+
+        logger.info(f"IR extraction completed for {ip_address}: {len(result['ir_stages'])} IR stages")
+
+        # Track IR extraction event
+        asyncio.create_task(analytics.track_event(
+            "ir_extraction",
+            {"ip_address": ip_address, "num_stages": len(result["ir_stages"])},
+            client_id=ip_address
+        ))
+
+        return response
+
+    except ValueError as e:
+        logger.warning(f"Invalid query from {ip_address}: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error processing IR extraction request from {ip_address}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.post("/query/compare")
+async def execute_query_compare(query_request: QueryRequest, request: Request):
+    ip_address = request.client.host if request.client else "unknown"
+
+    if len(query_request.query) > MAX_QUERY_LENGTH:
+        raise HTTPException(status_code=400, detail=f"Query too long. Maximum {MAX_QUERY_LENGTH} characters.")
+
+    try:
+        logger.info(f"Compare query request from {ip_address}: {query_request.query[:100]}...")
+
+        pgx_lower_task = execute_pgx_lower_query(query_request.query)
+        postgres_task = postgres_connector.run(query_request.query)
+
+        pgx_lower_result, postgres_result = await asyncio.gather(
+            pgx_lower_task,
+            postgres_task,
+            return_exceptions=True
+        )
+
+        response = {
+            "query": query_request.query,
+            "pgx_lower": None,
+            "postgres": None,
+            "errors": []
+        }
+
+        if isinstance(pgx_lower_result, Exception):
+            logger.warning(f"pgx-lower error: {str(pgx_lower_result)}")
+            response["errors"].append(f"pgx-lower: {str(pgx_lower_result)}")
+        else:
+            response["pgx_lower"] = {
+                "database": pgx_lower_result.get("database", "pgx-lower"),
+                "query_results": pgx_lower_result.get("query_results", {}),
+                "ir_stages": pgx_lower_result.get("ir_stages", []),
+                "num_ir_stages": len(pgx_lower_result.get("ir_stages", []))
+            }
+
+        if isinstance(postgres_result, Exception):
+            logger.warning(f"postgres error: {str(postgres_result)}")
+            response["errors"].append(f"postgres: {str(postgres_result)}")
+        else:
+            response["postgres"] = {
+                "database": postgres_result.database,
+                "version": postgres_result.version,
+                "latency_ms": postgres_result.latency_ms,
+                "outputs": [
+                    {
+                        "title": output.title,
+                        "content": output.content,
+                        "latency_ms": output.latency_ms
+                    }
+                    for output in postgres_result.outputs
+                ]
+            }
+
+        logger.info(f"Compare query completed for {ip_address}")
+
+        asyncio.create_task(analytics.track_event(
+            "compare_query",
+            {"ip_address": ip_address, "has_errors": len(response["errors"]) > 0},
+            client_id=ip_address
+        ))
+
+        return response
+
+    except ValueError as e:
+        logger.warning(f"Invalid query from {ip_address}: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error processing compare query request from {ip_address}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @app.get("/stats/performance")
 async def get_stats(limit: int = 24):

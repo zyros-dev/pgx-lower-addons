@@ -21,10 +21,24 @@ services:
     networks:
       - pgx-network
 
+  pgx-lower:
+    image: zyrosdev/pgx-lower-addons-pgx-lower:latest
+    container_name: pgx-lower-main
+    ports:
+      - "127.0.0.1:54326:5432"
+    volumes:
+      - pgx_lower_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pgx-network
+    restart: unless-stopped
+
   backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
+    image: zyrosdev/pgx-lower-addons-backend:latest
     container_name: pgx-lower-backend
     ports:
       - "8000:8000"
@@ -34,16 +48,22 @@ services:
     environment:
       - DATABASE_PATH=/data/database/pgx_lower.db
       - LOG_PATH=/data/logs
+      - PGX_LOWER_HOST=host.docker.internal
+      - PGX_LOWER_PORT=54326
+      - PGX_LOWER_USER=postgres
+      - PGX_LOWER_PASSWORD=
+      - PGX_LOWER_DB=postgres
+      - USE_DOCKER_EXEC=true
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - pgx-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: zyrosdev/pgx-lower-addons-frontend:latest
     container_name: pgx-lower-frontend
     ports:
       - "3001:80"
@@ -218,6 +238,7 @@ services:
 
 volumes:
   postgres_data:
+  pgx_lower_data:
   prometheus_data:
   grafana_data:
   thanos_data:

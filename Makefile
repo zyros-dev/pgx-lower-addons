@@ -26,8 +26,8 @@ serve:
 	@bash setup-production.sh 2>/dev/null || true
 	@echo "Stopping any running containers..."
 	@docker-compose down
-	@echo "Building Docker containers with host network..."
-	@docker-compose build --network host
+	@echo "Pulling Docker images from Docker Hub..."
+	@docker-compose pull
 	@echo "Starting Docker containers..."
 	@docker-compose up -d
 	@echo ""
