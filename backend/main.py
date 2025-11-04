@@ -10,6 +10,7 @@ from logger import logger
 from db_connectors.postgres import PostgresConnector
 from db_connectors.pgx_lower_ir import PgxLowerIRConnector
 from pgx_lower_query import execute_pgx_lower_query, shutdown_executor
+from ir_phase_names import normalize_ir_phase_name
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import asyncio
 import debug
@@ -281,19 +282,21 @@ async def execute_query(query_request: QueryRequest, request: Request):
                     "latency_ms": None
                 }
             ]
-            # Add IR stages
+            # Add IR stages with normalized names (skip if normalized name is None)
             for ir_stage in pgx_lower_result.get("ir_stages", []):
-                ir_outputs.append({
-                    "content": ir_stage["content"],
-                    "title": f"IR: {ir_stage['stage']}",
-                    "latency_ms": None
-                })
+                normalized_name = normalize_ir_phase_name(ir_stage['stage'])
+                if normalized_name is not None:
+                    ir_outputs.append({
+                        "content": ir_stage["content"],
+                        "title": f"IR: {normalized_name}",
+                        "latency_ms": None
+                    })
 
             results.append({
                 "database": "pgx-lower",
-                "version": f"PostgreSQL 16 with pgx-lower",
+                "version": f"PostgreSQL 17.5 with pgx-lower",
                 "cached": False,
-                "latency_ms": 0,
+                "latency_ms": pgx_lower_result.get("latency_ms", 0),
                 "outputs": ir_outputs
             })
         else:

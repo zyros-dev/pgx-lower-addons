@@ -1,6 +1,7 @@
 import asyncio
 import subprocess
 import os
+import time
 from typing import Dict, List, Any, Optional
 from pathlib import Path
 import asyncpg
@@ -49,26 +50,25 @@ class PgxLowerQueryExecutor:
     def _get_ir_files_from_container(self) -> List[tuple[str, str]]:
         if not self.use_docker_exec:
             return []
-        
+
         ir_files = []
         try:
             result = subprocess.run(
-                ["docker", "exec", self.container_name, "find", "/tmp/pgx_ir", 
+                ["/usr/bin/docker", "exec", self.container_name, "find", "/tmp/pgx_ir",
                  "-name", "pgx_lower_*.mlir", "-type", "f"],
                 capture_output=True,
                 text=True,
                 timeout=5
             )
-            
+
             if result.returncode != 0:
                 return []
-            
+
             filepaths = [fp.strip() for fp in result.stdout.strip().split("\n") if fp.strip()]
-            
-            # Read each file
+
             for filepath in filepaths:
                 result = subprocess.run(
-                    ["docker", "exec", self.container_name, "cat", filepath],
+                    ["/usr/bin/docker", "exec", self.container_name, "cat", filepath],
                     capture_output=True,
                     text=True,
                     timeout=5
@@ -97,15 +97,16 @@ class PgxLowerQueryExecutor:
         IRExtractor.ensure_ir_directory()
         removed = IRExtractor.cleanup_all_ir_files()
         logger.debug(f"Cleaned {removed} old IR files")
-        
+
+        start_time = time.time()
+
         try:
             try:
                 await self.conn.execute("LOAD 'pgx_lower.so'")
             except asyncpg.PostgresError as e:
                 if "already loaded" not in str(e):
                     logger.warning(f"Failed to load extension: {e}")
-            
-            # Enable IR logging
+
             try:
                 await self.conn.execute("SET pgx_lower.log_enable = true")
                 await self.conn.execute(
@@ -113,12 +114,12 @@ class PgxLowerQueryExecutor:
                 )
             except asyncpg.PostgresError:
                 logger.debug("Could not set pgx_lower logging parameters")
-            
-            # Execute query
+
             logger.debug(f"Executing query: {query[:100]}...")
             results = await self.conn.fetch(query)
-            
-            # Format query results
+
+            elapsed_ms = int((time.time() - start_time) * 1000)
+
             query_content = "No results"
             if results:
                 columns = list(results[0].keys())
@@ -144,10 +145,11 @@ class PgxLowerQueryExecutor:
                 ir_stages = IRExtractor.extract_ir_stages()
 
             logger.info(f"Query executed successfully, {len(ir_stages)} IR stages generated")
-            
+
             return {
                 "query": query,
                 "database": database,
+                "latency_ms": elapsed_ms,
                 "query_results": {
                     "title": "Query Results",
                     "content": query_content,

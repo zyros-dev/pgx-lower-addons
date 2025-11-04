@@ -22,7 +22,7 @@ services:
       - pgx-network
 
   pgx-lower:
-    image: zyrosdev/pgx-lower:latest
+    image: zyrosdev/pgx-lower-addons-pgx-lower:ir-working
     container_name: pgx-lower-main
     ports:
       - "127.0.0.1:54326:5432"
