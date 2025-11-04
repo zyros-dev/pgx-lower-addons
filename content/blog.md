@@ -1,4 +1,6 @@
 # Development Blog
+> This is half written at the moment! Check back later (Early December!)
+
 This contains interesting the path I took while making this as well as interesting problems I encountered. To understand it, you should require some level of understanding of what a compiler is, what a database's internals are, and some C++ knowledge. You should not require an understanding of the nodes in PostgreSQL (e.g. what is an Aggref and how do we parse it?), or what MLIR actually is.
 
 ## Background research
