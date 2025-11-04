@@ -282,19 +282,21 @@ async def execute_query(query_request: QueryRequest, request: Request):
                     "latency_ms": None
                 }
             ]
-            # Add IR stages with normalized names (skip if normalized name is None)
-            # Collect with order for sorting
             ir_stages_to_add = []
+            seen_titles = set()
             for ir_stage in pgx_lower_result.get("ir_stages", []):
                 normalized_name = normalize_ir_phase_name(ir_stage['stage'])
                 if normalized_name is not None:
-                    order = get_ir_phase_order(ir_stage['stage'])
-                    ir_stages_to_add.append({
-                        "content": ir_stage["content"],
-                        "title": f"IR: {normalized_name}",
-                        "latency_ms": None,
-                        "_order": order  # temporary for sorting
-                    })
+                    title = f"IR: {normalized_name}"
+                    if title not in seen_titles:
+                        order = get_ir_phase_order(ir_stage['stage'])
+                        ir_stages_to_add.append({
+                            "content": ir_stage["content"],
+                            "title": title,
+                            "latency_ms": None,
+                            "_order": order
+                        })
+                        seen_titles.add(title)
 
             ir_stages_to_add.sort(key=lambda x: x["_order"])
 
