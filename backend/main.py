@@ -316,7 +316,7 @@ async def execute_query(query_request: QueryRequest, request: Request):
 
         main_display = "Query executed successfully."
         if results:
-            main_display = f"Query executed successfully against {len(results)} database(s)."
+            main_display = f"Query executed successfully against {len(results)} database(s). Keep in mind pgx-lower is using a higher scale factor"
 
         result = {
             "main_display": main_display,

@@ -1,4 +1,4 @@
-# I rewrote PostgreSQL's execution engine and made it 3x faster while maintaining ACID compliance!
+# I rewrote PostgreSQL's execution engine with an LLVM compiler!
 
 When PostgreSQL was created (1996), people primarily used hard drives with much slower read/write speeds. If you flick through databasing textbooks, we calculate the time complexity based on the read/writes of the disk, and the time in the CPU or RAM is considered completely free. However, with the advent of NVME drives, other SSDs, larger CPU caches and higher RAM, this isn't an entirely valid method of measuring time complexity.
 
