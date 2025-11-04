@@ -316,55 +316,6 @@ async def execute_query(query_request: QueryRequest, request: Request):
         logger.error(f"Error processing query from {ip_address}: {str(e)}")
         raise
 
-@app.post("/query/ir")
-async def execute_query_with_ir(query_request: QueryRequest, request: Request):
-    """
-    Execute query on pgx-lower with MLIR IR extraction.
-
-    Returns both query results and all IR stages from the compilation pipeline:
-    - RelAlg MLIR
-    - DB+DSA+Util MLIR
-    - Standard MLIR
-    - LLVM IR
-    """
-    ip_address = request.client.host if request.client else "unknown"
-
-    if len(query_request.query) > MAX_QUERY_LENGTH:
-        raise HTTPException(status_code=400, detail=f"Query too long. Maximum {MAX_QUERY_LENGTH} characters.")
-
-    try:
-        logger.info(f"IR extraction request from {ip_address}: {query_request.query[:100]}...")
-
-        # Execute query with IR extraction
-        result = await execute_pgx_lower_query(query_request.query)
-
-        # Format response
-        response = {
-            "query": result["query"],
-            "database": result["database"],
-            "query_results": result["query_results"],
-            "ir_stages": result["ir_stages"],
-            "num_stages": len(result["ir_stages"])
-        }
-
-        logger.info(f"IR extraction completed for {ip_address}: {len(result['ir_stages'])} IR stages")
-
-        # Track IR extraction event
-        asyncio.create_task(analytics.track_event(
-            "ir_extraction",
-            {"ip_address": ip_address, "num_stages": len(result["ir_stages"])},
-            client_id=ip_address
-        ))
-
-        return response
-
-    except ValueError as e:
-        logger.warning(f"Invalid query from {ip_address}: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Error processing IR extraction request from {ip_address}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
 @app.post("/query/compare")
 async def execute_query_compare(query_request: QueryRequest, request: Request):
     ip_address = request.client.host if request.client else "unknown"

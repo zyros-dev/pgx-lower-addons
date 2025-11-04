@@ -85,14 +85,14 @@ ENV LLVM_DIR="/usr/lib/llvm-${LLVM_VERSION}/lib/cmake/llvm"
 
 # Copy pgx-lower source from host and build extension
 WORKDIR /build
-COPY ../../../pgx-lower . || true
+COPY pgx-lower/ .
 RUN if [ ! -f CMakeLists.txt ]; then \
-        echo "ERROR: pgx-lower source not found. Make sure ~/repos/pgx-lower exists."; \
+        echo "ERROR: pgx-lower source not found. Make sure it's in the build context."; \
         exit 1; \
     fi && \
     mkdir -p build-release && \
     cd build-release && \
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local/pgsql -DBUILD_ONLY_EXTENSION=ON .. && \
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/usr/local/pgsql -DBUILD_ONLY_EXTENSION=ON .. && \
     cmake --build . && \
     cmake --install .
 
@@ -134,7 +134,7 @@ RUN useradd -m -d /var/lib/postgresql -s /bin/bash postgres && \
 COPY --from=builder /usr/local/pgsql /usr/local/pgsql
 
 # Copy entrypoint script
-COPY docker/pgx-lower/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY pgx-lower-addons/docker/pgx-lower/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Create IR temp directory
@@ -145,7 +145,7 @@ ENV PATH="/usr/local/pgsql/bin:/usr/lib/llvm-${LLVM_VERSION}/bin:${PATH}"
 ENV LD_LIBRARY_PATH="/usr/local/pgsql/lib:/usr/lib/llvm-${LLVM_VERSION}/lib:${LD_LIBRARY_PATH}"
 
 WORKDIR /var/lib/postgresql
-EXPOSE 54326
+EXPOSE 5432
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["postgres"]

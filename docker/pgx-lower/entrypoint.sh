@@ -12,11 +12,11 @@ if [ "$(id -u)" = '0' ]; then
     # Configure PostgreSQL for external connections (as postgres user)
     gosu postgres bash -c "sed -i \"s/^#*listen_addresses.*/listen_addresses = '*'/\" /var/lib/postgresql/data/postgresql.conf"
 
-    # Configure port 54326 (as postgres user)
+    # Configure port 5432 (default PostgreSQL port, docker maps to host port)
     if grep -q '^port' /var/lib/postgresql/data/postgresql.conf 2>/dev/null; then
-        gosu postgres bash -c "sed -i \"s/^port.*/port = 54326/\" /var/lib/postgresql/data/postgresql.conf"
+        gosu postgres bash -c "sed -i \"s/^port.*/port = 5432/\" /var/lib/postgresql/data/postgresql.conf"
     else
-        gosu postgres bash -c "echo 'port = 54326' >> /var/lib/postgresql/data/postgresql.conf"
+        gosu postgres bash -c "echo 'port = 5432' >> /var/lib/postgresql/data/postgresql.conf"
     fi
 
     # Add trust entry for Docker network if not present
@@ -38,9 +38,9 @@ else
     sed -i "s/^#*listen_addresses.*/listen_addresses = '*'/" /var/lib/postgresql/data/postgresql.conf
 
     if grep -q '^port' /var/lib/postgresql/data/postgresql.conf 2>/dev/null; then
-        sed -i "s/^port.*/port = 54326/" /var/lib/postgresql/data/postgresql.conf
+        sed -i "s/^port.*/port = 5432/" /var/lib/postgresql/data/postgresql.conf
     else
-        echo "port = 54326" >> /var/lib/postgresql/data/postgresql.conf
+        echo "port = 5432" >> /var/lib/postgresql/data/postgresql.conf
     fi
 
     grep -q 'host all all 0.0.0.0/0 trust' /var/lib/postgresql/data/pg_hba.conf || \
