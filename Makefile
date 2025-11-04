@@ -1,17 +1,18 @@
-.PHONY: help serve stop clean install report setup-ssl deploy
+.PHONY: help serve stop clean install report setup-ssl deploy update-remote
 
 help:
 	@echo "pgx-lower-addons Makefile"
 	@echo ""
 	@echo "Available targets:"
-	@echo "  install      - Install all dependencies (creates venv if needed)"
-	@echo "  serve        - Start frontend and backend development servers"
-	@echo "  stop         - Stop all running containers"
-	@echo "  clean        - Clean build artifacts"
-	@echo "  report       - Build LaTeX report"
-	@echo "  setup-nginx  - Setup nginx reverse proxy (production only, requires root)"
-	@echo "  get-ssl      - Get SSL certificate (run after serve, requires root)"
-	@echo "  deploy       - Full deployment: nginx + containers + SSL (production only)"
+	@echo "  install        - Install all dependencies (creates venv if needed)"
+	@echo "  serve          - Start frontend and backend development servers"
+	@echo "  stop           - Stop all running containers"
+	@echo "  clean          - Clean build artifacts"
+	@echo "  report         - Build LaTeX report"
+	@echo "  setup-nginx    - Setup nginx reverse proxy (production only, requires root)"
+	@echo "  get-ssl        - Get SSL certificate (run after serve, requires root)"
+	@echo "  deploy         - Full deployment: nginx + containers + SSL (production only)"
+	@echo "  update-remote  - Rebuild backend+frontend, push to Hub, update remote server"
 
 install:
 	@echo "Setting up backend..."
@@ -64,3 +65,16 @@ get-ssl:
 deploy: stop setup-nginx serve get-ssl
 	@echo "Deployment complete!"
 	@echo "Site available at https://pgx.zyros.dev"
+
+update-remote:
+	@echo "Building backend image with --no-cache..."
+	@docker build --no-cache -f backend/Dockerfile -t zyrosdev/pgx-lower-addons-backend:latest .
+	@echo "Building frontend image with --no-cache..."
+	@docker build --no-cache -f frontend/Dockerfile -t zyrosdev/pgx-lower-addons-frontend:latest .
+	@echo "Pushing backend image to Docker Hub..."
+	@docker push zyrosdev/pgx-lower-addons-backend:latest
+	@echo "Pushing frontend image to Docker Hub..."
+	@docker push zyrosdev/pgx-lower-addons-frontend:latest
+	@echo "Deploying to remote server (root@37.27.24.142)..."
+	@ssh -o StrictHostKeyChecking=no root@37.27.24.142 "cd ~/pgx-lower-addons && git pull && make serve"
+	@echo "Remote server update complete!"
