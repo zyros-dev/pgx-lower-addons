@@ -22,10 +22,7 @@ services:
       - pgx-network
 
   pgx-lower:
-    build:
-      context: ..
-      dockerfile: pgx-lower-addons/docker/pgx-lower/Dockerfile
-    image: pgx-lower-addons-pgx-lower:latest
+    image: zyrosdev/pgx-lower:latest
     container_name: pgx-lower-main
     ports:
       - "127.0.0.1:54326:5432"
@@ -41,10 +38,7 @@ services:
     restart: unless-stopped
 
   backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    image: pgx-lower-addons-backend:latest
+    image: zyrosdev/pgx-lower-addons-backend:latest
     container_name: pgx-lower-backend
     ports:
       - "8000:8000"
