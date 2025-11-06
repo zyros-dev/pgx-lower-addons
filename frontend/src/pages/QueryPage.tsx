@@ -111,6 +111,7 @@ const QueryPage: React.FC = () => {
 
         {/* TPC-H Query Buttons */}
         <div className="tpch-buttons-container">
+          <span className="tpch-label">Keep in mind the PGX database here is running in debug mode! This is to enable the intermediate representation dumping!</span>
           <span className="tpch-label">TPC-H Queries:</span>
           <div className="tpch-buttons">
             {Array.from({ length: 22 }, (_, i) => i + 1).map((num) => (
