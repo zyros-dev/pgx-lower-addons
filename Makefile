@@ -1,6 +1,6 @@
 .PHONY: help serve stop clean install report setup-ssl deploy update-remote
 
-update-remote:
+update-server:
 	@echo "Building backend image with --no-cache..."
 	@docker build --no-cache -f backend/Dockerfile -t zyrosdev/pgx-lower-addons-backend:latest .
 	@echo "Building frontend image with --no-cache..."
