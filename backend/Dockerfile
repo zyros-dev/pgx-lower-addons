@@ -23,8 +23,6 @@ COPY backend/ .
 
 COPY content /app/content
 COPY resources /app/resources
-COPY pgx-lower-report /app/pgx-lower-report
-COPY slides /app/slides
 
 RUN mkdir -p /data/database /data/logs
 

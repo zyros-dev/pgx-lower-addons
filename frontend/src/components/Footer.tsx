@@ -7,12 +7,12 @@ const Footer: React.FC = () => {
     <footer className="footer">
       <div className="footer-content">
         <div className="footer-links">
-          <a href={`${API_BASE_URL}/download/paper`} target="_blank" rel="noopener noreferrer">
-            Download Paper
+          <a href={`${API_BASE_URL}/download/Thesis_B_Anonymous.pdf`} target="_blank" rel="noopener noreferrer">
+            Download Slides B
           </a>
           <span className="separator">|</span>
-          <a href={`${API_BASE_URL}/download/slides`} target="_blank" rel="noopener noreferrer">
-            Download Slides
+          <a href={`${API_BASE_URL}/download/Thesis_C_Anonymous.pdf`} target="_blank" rel="noopener noreferrer">
+            Download Slides C
           </a>
           <span className="separator">|</span>
           <a href="https://github.com/zyros-dev" target="_blank" rel="noopener noreferrer">

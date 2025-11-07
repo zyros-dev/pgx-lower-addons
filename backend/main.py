@@ -19,8 +19,6 @@ from collections import defaultdict
 from analytics import analytics
 
 CONTENT_DIR = Path(__file__).parent / "content"
-REPORT_DIR = Path(__file__).parent / "pgx-lower-report"
-SLIDES_DIR = Path(__file__).parent / "slides"
 RESOURCES_DIR = Path(__file__).parent / "resources"
 
 app = FastAPI(title="pgx-lower API")
@@ -147,51 +145,30 @@ async def get_resource(filename: str):
     logger.info(f"Serving resource file: {filename}")
     return FileResponse(file_path)
 
-@app.get("/download/paper")
-async def download_paper(request: Request):
+@app.get("/download/{filename}")
+async def download_file(filename: str, request: Request):
     ip_address = request.client.host if request.client else "unknown"
-    pdf_path = REPORT_DIR / "main.pdf"
 
-    if not pdf_path.exists():
-        logger.error(f"Paper PDF not found at {pdf_path}")
-        raise HTTPException(status_code=404, detail="Paper not found")
+    file_path = RESOURCES_DIR / filename
 
-    logger.info(f"Paper download request from {ip_address}")
+    if not file_path.exists():
+        logger.error(f"File not found at {file_path}")
+        raise HTTPException(status_code=404, detail="File not found")
+
+    if not str(file_path.resolve()).startswith(str(RESOURCES_DIR.resolve())):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    logger.info(f"Download request from {ip_address}: {filename}")
 
     asyncio.create_task(analytics.track_event(
         "download",
-        {"content_type": "paper", "ip_address": ip_address},
+        {"filename": filename, "ip_address": ip_address},
         client_id=ip_address
     ))
 
     return FileResponse(
-        pdf_path,
-        media_type="application/pdf",
-        filename="pgx-lower-paper.pdf"
-    )
-
-@app.get("/download/slides")
-async def download_slides(request: Request):
-    ip_address = request.client.host if request.client else "unknown"
-
-    slides_path = SLIDES_DIR / "slides.pdf"
-
-    if not slides_path.exists():
-        logger.error(f"Slides PDF not found at {slides_path}")
-        raise HTTPException(status_code=404, detail="Slides not found")
-
-    logger.info(f"Slides download request from {ip_address}")
-
-    asyncio.create_task(analytics.track_event(
-        "download",
-        {"content_type": "slides", "ip_address": ip_address},
-        client_id=ip_address
-    ))
-
-    return FileResponse(
-        slides_path,
-        media_type="application/pdf",
-        filename="pgx-lower-slides.pdf"
+        file_path,
+        filename=filename
     )
 
 @app.get("/resources/{filename}")
