@@ -2,7 +2,6 @@ groups:
   - name: aggregations_1m
     interval: 1m
     rules:
-      # 1-minute aggregations
       - record: http_requests_total:rate1m
         expr: rate(http_requests_total[1m])
 
@@ -18,7 +17,6 @@ groups:
   - name: aggregations_1h
     interval: 1h
     rules:
-      # 1-hour aggregations
       - record: http_requests_total:rate1h
         expr: rate(http_requests_total[1h])
 
@@ -34,7 +32,6 @@ groups:
   - name: aggregations_1d
     interval: 1d
     rules:
-      # 1-day aggregations
       - record: http_requests_total:rate1d
         expr: rate(http_requests_total[1d])
 

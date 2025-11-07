@@ -105,11 +105,9 @@ const QueryPage: React.FC = () => {
 
   return (
     <div className="query-page">
-      {/* SQL Editor */}
       <div className="editor-section">
         <h3>SQL Query</h3>
 
-        {/* TPC-H Query Buttons */}
         <div className="tpch-buttons-container">
           <span className="tpch-label">Keep in mind the PGX database here is running in debug mode! This is to enable the intermediate representation dumping!</span>
           <span className="tpch-label">TPC-H Queries:</span>
@@ -156,7 +154,6 @@ const QueryPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Display */}
       {result && (
         <>
           <div className="main-display-section">
@@ -179,7 +176,6 @@ const QueryPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Database Results */}
           <div className="database-results-section">
             {result.results.map((dbResult, idx) => (
               <div key={idx} className="database-result">
