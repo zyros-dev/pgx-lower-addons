@@ -278,6 +278,63 @@ def create_memory_plot_pdf(df):
             label_data = df[df['label'] == label]
             queries = sorted(label_data['query_name'].unique())
 
+            pos = 0
+            tick_positions = []
+
+            for query in queries:
+                query_data = label_data[label_data['query_name'] == query]
+                tick_positions.append(pos + 0.5)
+
+                plot_data = []
+                positions = []
+                colors = []
+
+                for pgx_label in ['PostgreSQL', 'pgx-lower']:
+                    subset = query_data[query_data['pgx_label'] == pgx_label]['memory_peak_mb']
+                    if len(subset) > 0:
+                        plot_data.append(subset.values)
+                        positions.append(pos)
+                        colors.append(POSTGRES_COLOR if pgx_label == 'PostgreSQL' else PGX_COLOR)
+                        pos += 1
+
+                if plot_data:
+                    draw_bar_with_boxplot(ax, plot_data, positions, colors)
+
+                pos += 0.3
+
+            ax.set_xticks(tick_positions)
+            ax.set_xticklabels(queries, rotation=45, ha='right', fontsize=8)
+            ax.set_ylabel('Peak Memory (MB)', fontweight='bold')
+            ax.set_title(label, fontsize=10, fontweight='bold')
+            ax.grid(axis='y', alpha=0.3)
+
+        for idx in range(n_labels, len(axes)):
+            axes[idx].axis('off')
+
+        postgres_patch = mpatches.Patch(facecolor=POSTGRES_COLOR, alpha=0.6, edgecolor='black', label='PostgreSQL')
+        pgx_patch = mpatches.Patch(facecolor=PGX_COLOR, alpha=0.6, edgecolor='black', label='pgx-lower')
+        fig.legend(handles=[postgres_patch, pgx_patch], loc='upper right', fontsize=10)
+
+        fig.suptitle('Peak Memory Usage Distribution', fontsize=16, fontweight='bold', y=0.995)
+        plt.tight_layout()
+        pdf.savefig(fig, bbox_inches='tight')
+        plt.close(fig)
+
+def create_memory_diff_pdf(df):
+    labels = sorted(df['label'].unique())
+    n_labels = len(labels)
+    n_cols = 3
+    n_rows = (n_labels + n_cols - 1) // n_cols
+
+    with PdfPages(f'{OUTPUT_DIR}/memory_diffs.pdf') as pdf:
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(18, 5 * n_rows))
+        axes = axes.flatten()
+
+        for idx, label in enumerate(labels):
+            ax = axes[idx]
+            label_data = df[df['label'] == label]
+            queries = sorted(label_data['query_name'].unique())
+
             all_diffs = []
             pos = 0
             tick_positions = []
@@ -342,6 +399,9 @@ def main():
 
     print("Generating memory_plots.pdf...")
     create_memory_plot_pdf(df)
+
+    print("Generating memory_diffs.pdf...")
+    create_memory_diff_pdf(df)
 
     print(f"\nDone! PDFs saved to {OUTPUT_DIR}/")
 
