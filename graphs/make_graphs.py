@@ -199,7 +199,7 @@ def create_box_plot_pdf(df):
         pgx_patch = mpatches.Patch(facecolor=PGX_COLOR, alpha=0.6, edgecolor='black', label='pgx-lower')
         fig.legend(handles=[postgres_patch, pgx_patch], loc='upper right', fontsize=10)
 
-        fig.suptitle('Execution Time Distribution', fontsize=16, fontweight='bold', y=0.995)
+        fig.suptitle('Execution Time Distribution. Lower is better', fontsize=16, fontweight='bold', y=0.995)
         plt.tight_layout()
         pdf.savefig(fig, bbox_inches='tight')
         plt.close(fig)
@@ -264,7 +264,7 @@ def create_diff_plot_pdf(df):
         diff_patch = mpatches.Patch(facecolor='#2ecc71', alpha=0.6, edgecolor='black', label='PostgreSQL - pgx-lower')
         fig.legend(handles=[diff_patch], loc='upper right', fontsize=10)
 
-        fig.suptitle('Performance Difference', fontsize=16, fontweight='bold', y=0.995)
+        fig.suptitle('Performance Difference. Higher means pgx-lower is faster than PostgreSQL', fontsize=16, fontweight='bold', y=0.995)
         plt.tight_layout()
         pdf.savefig(fig, bbox_inches='tight')
         plt.close(fig)
@@ -321,7 +321,7 @@ def create_memory_plot_pdf(df):
         pgx_patch = mpatches.Patch(facecolor=PGX_COLOR, alpha=0.6, edgecolor='black', label='pgx-lower')
         fig.legend(handles=[postgres_patch, pgx_patch], loc='upper right', fontsize=10)
 
-        fig.suptitle('Peak Memory Usage Distribution', fontsize=16, fontweight='bold', y=0.995)
+        fig.suptitle('Peak Memory Usage Distribution. Lower is better', fontsize=16, fontweight='bold', y=0.995)
         plt.tight_layout()
         pdf.savefig(fig, bbox_inches='tight')
         plt.close(fig)
@@ -386,7 +386,7 @@ def create_memory_diff_pdf(df):
         diff_patch = mpatches.Patch(facecolor='#9b59b6', alpha=0.6, edgecolor='black', label='PostgreSQL - pgx-lower')
         fig.legend(handles=[diff_patch], loc='upper right', fontsize=10)
 
-        fig.suptitle('Memory Usage Difference', fontsize=16, fontweight='bold', y=0.995)
+        fig.suptitle('Memory Usage Difference. Lower is better', fontsize=16, fontweight='bold', y=0.995)
         plt.tight_layout()
         pdf.savefig(fig, bbox_inches='tight')
         plt.close(fig)
