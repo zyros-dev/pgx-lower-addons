@@ -126,8 +126,14 @@ def load_data():
 
     return df
 
+def reorder_labels(labels):
+    sorted_labels = sorted(labels)
+    if len(sorted_labels) >= 2:
+        sorted_labels[0], sorted_labels[1] = sorted_labels[1], sorted_labels[0]
+    return sorted_labels
+
 def create_box_plot_pdf(df):
-    labels = sorted(df['label'].unique())
+    labels = reorder_labels(df['label'].unique())
     n_labels = len(labels)
     n_cols = 3
     n_rows = (n_labels + n_cols - 1) // n_cols
@@ -199,7 +205,7 @@ def create_box_plot_pdf(df):
         plt.close(fig)
 
 def create_diff_plot_pdf(df):
-    labels = sorted(df['label'].unique())
+    labels = reorder_labels(df['label'].unique())
     n_labels = len(labels)
     n_cols = 3
     n_rows = (n_labels + n_cols - 1) // n_cols
@@ -264,7 +270,7 @@ def create_diff_plot_pdf(df):
         plt.close(fig)
 
 def create_memory_plot_pdf(df):
-    labels = sorted(df['label'].unique())
+    labels = reorder_labels(df['label'].unique())
     n_labels = len(labels)
     n_cols = 3
     n_rows = (n_labels + n_cols - 1) // n_cols
@@ -321,7 +327,7 @@ def create_memory_plot_pdf(df):
         plt.close(fig)
 
 def create_memory_diff_pdf(df):
-    labels = sorted(df['label'].unique())
+    labels = reorder_labels(df['label'].unique())
     n_labels = len(labels)
     n_cols = 3
     n_rows = (n_labels + n_cols - 1) // n_cols
