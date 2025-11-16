@@ -64,3 +64,5 @@ data/database/pgx_lower.db
 data/
 /pgx-lower
 docker/pgx-lower/
+
+graphs/data/
