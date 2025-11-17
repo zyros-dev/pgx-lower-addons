@@ -12,6 +12,7 @@ import seaborn as sns
 import os
 
 DB_PATH = './graphs/data/benchmark.db'
+PERF_STATS_DB = './graphs/data/perf-stats.db'
 OUTPUT_DIR = './graphs/outputs'
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -122,6 +123,35 @@ def load_data():
 
     df = df.dropna(subset=['duration_ms', 'memory_peak_mb'])
 
+    df['pgx_label'] = df['pgx_enabled'].map({1: 'pgx-lower', 0: 'PostgreSQL'})
+
+    return df
+
+def load_perf_stats():
+    conn = sqlite3.connect(PERF_STATS_DB)
+
+    query = """
+    SELECT
+        run_id,
+        query_name,
+        pgx_enabled,
+        iteration,
+        ipc,
+        llc_miss_rate,
+        branch_miss_rate,
+        branches
+    FROM perf_stats
+    ORDER BY run_id, query_name, iteration
+    """
+
+    df = pd.read_sql_query(query, conn)
+    conn.close()
+
+    # Drop rows with missing values in key metrics
+    df = df.dropna(subset=['ipc', 'llc_miss_rate', 'branch_miss_rate', 'branches'])
+
+    # Use run_id as label and convert pgx_enabled to label
+    df['label'] = df['run_id']
     df['pgx_label'] = df['pgx_enabled'].map({1: 'pgx-lower', 0: 'PostgreSQL'})
 
     return df
@@ -391,6 +421,90 @@ def create_memory_diff_pdf(df):
         pdf.savefig(fig, bbox_inches='tight')
         plt.close(fig)
 
+def create_perf_metric_plot_pdf(df, metric_column, metric_label, metric_units, filename, higher_better=False):
+    labels = reorder_labels(df['label'].unique())
+    n_labels = len(labels)
+    n_cols = 2
+    n_rows = (n_labels + n_cols - 1) // n_cols
+
+    with PdfPages(f'{OUTPUT_DIR}/{filename}') as pdf:
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(14, 5 * n_rows))
+        axes = axes.flatten()
+
+        for idx, label in enumerate(labels):
+            ax = axes[idx]
+            label_data = df[df['label'] == label]
+            queries = sorted(label_data['query_name'].unique())
+
+            # Calculate y_cap at 98th percentile to detect outliers
+            all_values = label_data[metric_column].values
+            y_cap = np.percentile(all_values, 98)
+
+            pos = 0
+            tick_positions = []
+            all_outliers = []
+
+            for query in queries:
+                query_data = label_data[label_data['query_name'] == query]
+                tick_positions.append(pos + 0.5)
+
+                plot_data = []
+                positions = []
+                colors = []
+
+                for pgx_label in ['PostgreSQL', 'pgx-lower']:
+                    subset = query_data[query_data['pgx_label'] == pgx_label][metric_column]
+                    if len(subset) > 0:
+                        plot_data.append(subset.values)
+                        positions.append(pos)
+                        colors.append(POSTGRES_COLOR if pgx_label == 'PostgreSQL' else PGX_COLOR)
+                        pos += 1
+
+                if plot_data:
+                    outliers = draw_bar_with_boxplot(ax, plot_data, positions, colors, y_cap=y_cap)
+                    all_outliers.extend(outliers)
+
+                pos += 0.3
+
+            if all_outliers and y_cap:
+                ax.set_ylim(0, y_cap * 1.1)
+                cap_axis_with_outlier_arrows(ax, all_outliers)
+
+            ax.set_xticks(tick_positions)
+            ax.set_xticklabels(queries, rotation=45, ha='right', fontsize=8)
+            ax.set_ylabel(f'{metric_label} ({metric_units})', fontweight='bold')
+            ax.set_title(label, fontsize=10, fontweight='bold')
+            ax.grid(axis='y', alpha=0.3)
+
+        for idx in range(n_labels, len(axes)):
+            axes[idx].axis('off')
+
+        postgres_patch = mpatches.Patch(facecolor=POSTGRES_COLOR, alpha=0.6, edgecolor='black', label='PostgreSQL')
+        pgx_patch = mpatches.Patch(facecolor=PGX_COLOR, alpha=0.6, edgecolor='black', label='pgx-lower')
+        fig.legend(handles=[postgres_patch, pgx_patch], loc='upper right', fontsize=10)
+
+        better_text = 'Higher is better' if higher_better else 'Lower is better'
+        fig.suptitle(f'{metric_label} Distribution. {better_text}', fontsize=16, fontweight='bold', x=0.35, y=0.995)
+        plt.tight_layout()
+        pdf.savefig(fig, bbox_inches='tight')
+        plt.close(fig)
+
+def create_ipc_plot_pdf(df):
+    """Create IPC (Instructions Per Cycle) plots"""
+    create_perf_metric_plot_pdf(df, 'ipc', 'IPC', 'instructions/cycle', 'ipc_plots.pdf', higher_better=True)
+
+def create_llc_miss_plot_pdf(df):
+    """Create LLC miss rate plots"""
+    create_perf_metric_plot_pdf(df, 'llc_miss_rate', 'LLC Miss Rate', '%', 'llc_miss_plots.pdf', higher_better=False)
+
+def create_branch_miss_plot_pdf(df):
+    """Create branch miss rate plots"""
+    create_perf_metric_plot_pdf(df, 'branch_miss_rate', 'Branch Miss Rate', '%', 'branch_miss_plots.pdf', higher_better=False)
+
+def create_branches_plot_pdf(df):
+    """Create branches count plots"""
+    create_perf_metric_plot_pdf(df, 'branches', 'Number of Branches', 'count', 'branches_plots.pdf', higher_better=False)
+
 def main():
     print("Loading benchmark data...")
     df = load_data()
@@ -408,6 +522,26 @@ def main():
 
     print("Generating memory_diffs.pdf...")
     create_memory_diff_pdf(df)
+
+    print("\nLoading performance stats data...")
+    try:
+        perf_df = load_perf_stats()
+        print(f"Loaded {len(perf_df)} perf stats data points from database")
+        print(f"Labels: {sorted(perf_df['label'].unique())}")
+
+        print("\nGenerating ipc_plots.pdf...")
+        create_ipc_plot_pdf(perf_df)
+
+        print("Generating llc_miss_plots.pdf...")
+        create_llc_miss_plot_pdf(perf_df)
+
+        print("Generating branch_miss_plots.pdf...")
+        create_branch_miss_plot_pdf(perf_df)
+
+        print("Generating branches_plots.pdf...")
+        create_branches_plot_pdf(perf_df)
+    except Exception as e:
+        print(f"Warning: Could not load performance stats: {e}")
 
     print(f"\nDone! PDFs saved to {OUTPUT_DIR}/")
 
