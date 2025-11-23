@@ -132,16 +132,20 @@ def load_perf_stats():
 
     query = """
     SELECT
-        run_id,
-        query_name,
-        pgx_enabled,
-        iteration,
-        ipc,
-        llc_miss_rate,
-        branch_miss_rate,
-        branches
-    FROM perf_stats
-    ORDER BY run_id, query_name, iteration
+        ps.run_id,
+        ps.query_name,
+        ps.pgx_enabled,
+        ps.iteration,
+        ps.ipc,
+        ps.llc_miss_rate,
+        ps.branch_miss_rate,
+        ps.branches,
+        r.label,
+        r.scale_factor,
+        r.iterations as total_iterations
+    FROM perf_stats ps
+    JOIN runs r ON ps.run_id = r.run_id
+    ORDER BY ps.run_id, ps.query_name, ps.iteration
     """
 
     df = pd.read_sql_query(query, conn)
@@ -150,17 +154,13 @@ def load_perf_stats():
     # Drop rows with missing values in key metrics
     df = df.dropna(subset=['ipc', 'llc_miss_rate', 'branch_miss_rate', 'branches'])
 
-    # Use run_id as label and convert pgx_enabled to label
-    df['label'] = df['run_id']
+    # Convert pgx_enabled to label
     df['pgx_label'] = df['pgx_enabled'].map({1: 'pgx-lower', 0: 'PostgreSQL'})
 
     return df
 
 def reorder_labels(labels):
-    sorted_labels = sorted(labels)
-    if len(sorted_labels) >= 2:
-        sorted_labels[0], sorted_labels[1] = sorted_labels[1], sorted_labels[0]
-    return sorted_labels
+    return sorted(labels)
 
 def create_box_plot_pdf(df):
     labels = reorder_labels(df['label'].unique())
@@ -168,7 +168,7 @@ def create_box_plot_pdf(df):
     n_cols = 3
     n_rows = (n_labels + n_cols - 1) // n_cols
 
-    with PdfPages(f'{OUTPUT_DIR}/box_plots.pdf') as pdf:
+    with PdfPages(f'{OUTPUT_DIR}/mine_box_plots.pdf') as pdf:
         fig, axes = plt.subplots(n_rows, n_cols, figsize=(18, 5 * n_rows))
         axes = axes.flatten()
 
@@ -240,7 +240,7 @@ def create_diff_plot_pdf(df):
     n_cols = 3
     n_rows = (n_labels + n_cols - 1) // n_cols
 
-    with PdfPages(f'{OUTPUT_DIR}/diff_plots.pdf') as pdf:
+    with PdfPages(f'{OUTPUT_DIR}/mine_diff_plots.pdf') as pdf:
         fig, axes = plt.subplots(n_rows, n_cols, figsize=(18, 5 * n_rows))
         axes = axes.flatten()
 
@@ -305,7 +305,7 @@ def create_memory_plot_pdf(df):
     n_cols = 3
     n_rows = (n_labels + n_cols - 1) // n_cols
 
-    with PdfPages(f'{OUTPUT_DIR}/memory_plots.pdf') as pdf:
+    with PdfPages(f'{OUTPUT_DIR}/mine_memory_plots.pdf') as pdf:
         fig, axes = plt.subplots(n_rows, n_cols, figsize=(18, 5 * n_rows))
         axes = axes.flatten()
 
@@ -362,7 +362,7 @@ def create_memory_diff_pdf(df):
     n_cols = 3
     n_rows = (n_labels + n_cols - 1) // n_cols
 
-    with PdfPages(f'{OUTPUT_DIR}/memory_diffs.pdf') as pdf:
+    with PdfPages(f'{OUTPUT_DIR}/mine_memory_diffs.pdf') as pdf:
         fig, axes = plt.subplots(n_rows, n_cols, figsize=(18, 5 * n_rows))
         axes = axes.flatten()
 
@@ -491,19 +491,228 @@ def create_perf_metric_plot_pdf(df, metric_column, metric_label, metric_units, f
 
 def create_ipc_plot_pdf(df):
     """Create IPC (Instructions Per Cycle) plots"""
-    create_perf_metric_plot_pdf(df, 'ipc', 'IPC', 'instructions/cycle', 'ipc_plots.pdf', higher_better=True)
+    create_perf_metric_plot_pdf(df, 'ipc', 'IPC', 'instructions/cycle', 'mine_ipc_plots.pdf', higher_better=True)
 
 def create_llc_miss_plot_pdf(df):
     """Create LLC miss rate plots"""
-    create_perf_metric_plot_pdf(df, 'llc_miss_rate', 'LLC Miss Rate', '%', 'llc_miss_plots.pdf', higher_better=False)
+    create_perf_metric_plot_pdf(df, 'llc_miss_rate', 'LLC Miss Rate', '%', 'mine_llc_miss_plots.pdf', higher_better=False)
 
 def create_branch_miss_plot_pdf(df):
     """Create branch miss rate plots"""
-    create_perf_metric_plot_pdf(df, 'branch_miss_rate', 'Branch Miss Rate', '%', 'branch_miss_plots.pdf', higher_better=False)
+    create_perf_metric_plot_pdf(df, 'branch_miss_rate', 'Branch Miss Rate', '%', 'mine_branch_miss_plots.pdf', higher_better=False)
 
 def create_branches_plot_pdf(df):
     """Create branches count plots"""
-    create_perf_metric_plot_pdf(df, 'branches', 'Number of Branches', 'count', 'branches_plots.pdf', higher_better=False)
+    create_perf_metric_plot_pdf(df, 'branches', 'Number of Branches', 'count', 'mine_branches_plots.pdf', higher_better=False)
+
+def create_statistics_pdf(benchmark_df, perf_df):
+    """Create comprehensive statistics PDF with percentiles for all metrics"""
+    from matplotlib.backends.backend_pdf import PdfPages
+    import matplotlib.pyplot as plt
+
+    with PdfPages(f'{OUTPUT_DIR}/mine_statistics.pdf') as pdf:
+        # Page 1: Latency/Execution Time Statistics
+        create_latency_statistics_page(pdf, benchmark_df)
+
+        # Page 2: Memory Statistics
+        create_memory_statistics_page(pdf, benchmark_df)
+
+        # Page 3+: Performance Statistics
+        create_perf_statistics_page(pdf, perf_df)
+
+def create_latency_statistics_page(pdf, df):
+    """Create latency/execution time statistics page"""
+    fig = plt.figure(figsize=(11, 8.5))
+    fig.suptitle('Execution Time Statistics (ms)', fontsize=16, fontweight='bold', y=0.98)
+
+    ax = fig.add_subplot(111)
+    ax.axis('off')
+
+    y_pos = 0.95
+    line_height = 0.04
+
+    for label in reorder_labels(df['label'].unique()):
+        label_data = df[df['label'] == label]
+
+        # Add label header
+        fig.text(0.05, y_pos, f"{label}", fontsize=12, fontweight='bold')
+        y_pos -= line_height * 1.5
+
+        # Per-query statistics
+        for query in sorted(label_data['query_name'].unique()):
+            query_data = label_data[label_data['query_name'] == query]
+
+            for pgx_label in ['PostgreSQL', 'pgx-lower']:
+                subset = query_data[query_data['pgx_label'] == pgx_label]['duration_ms']
+                if len(subset) > 0:
+                    percentiles = np.percentile(subset, [0, 25, 50, 75, 100])
+                    mean = np.mean(subset)
+                    std = np.std(subset)
+                    cv = (std / mean * 100) if mean != 0 else 0
+                    text = f"  {query} ({pgx_label}): 0%={percentiles[0]:.2f}, 25%={percentiles[1]:.2f}, 50%={percentiles[2]:.2f}, 75%={percentiles[3]:.2f}, 100%={percentiles[4]:.2f}, CV={cv:.2f}%"
+                    fig.text(0.08, y_pos, text, fontsize=9, family='monospace')
+                    y_pos -= line_height
+
+        # Aggregate statistics
+        fig.text(0.08, y_pos, "AGGREGATE:", fontsize=10, fontweight='bold')
+        y_pos -= line_height
+
+        for pgx_label in ['PostgreSQL', 'pgx-lower']:
+            subset = label_data[label_data['pgx_label'] == pgx_label]['duration_ms']
+            if len(subset) > 0:
+                percentiles = np.percentile(subset, [0, 25, 50, 75, 100])
+                mean = np.mean(subset)
+                std = np.std(subset)
+                cv = (std / mean * 100) if mean != 0 else 0
+                text = f"  {pgx_label}: 0%={percentiles[0]:.2f}, 25%={percentiles[1]:.2f}, 50%={percentiles[2]:.2f}, 75%={percentiles[3]:.2f}, 100%={percentiles[4]:.2f}, CV={cv:.2f}%"
+                fig.text(0.08, y_pos, text, fontsize=9, family='monospace', fontweight='bold')
+                y_pos -= line_height
+
+        y_pos -= line_height * 0.5
+
+        if y_pos < 0.1:
+            pdf.savefig(fig, bbox_inches='tight')
+            plt.close(fig)
+            fig = plt.figure(figsize=(11, 8.5))
+            fig.suptitle('Execution Time Statistics (ms) - Continued', fontsize=16, fontweight='bold', y=0.98)
+            ax = fig.add_subplot(111)
+            ax.axis('off')
+            y_pos = 0.95
+
+    pdf.savefig(fig, bbox_inches='tight')
+    plt.close(fig)
+
+def create_memory_statistics_page(pdf, df):
+    """Create memory statistics page"""
+    fig = plt.figure(figsize=(11, 8.5))
+    fig.suptitle('Memory Usage Statistics (MB)', fontsize=16, fontweight='bold', y=0.98)
+
+    ax = fig.add_subplot(111)
+    ax.axis('off')
+
+    y_pos = 0.95
+    line_height = 0.04
+
+    for label in reorder_labels(df['label'].unique()):
+        label_data = df[df['label'] == label]
+
+        # Add label header
+        fig.text(0.05, y_pos, f"{label}", fontsize=12, fontweight='bold')
+        y_pos -= line_height * 1.5
+
+        # Per-query statistics
+        for query in sorted(label_data['query_name'].unique()):
+            query_data = label_data[label_data['query_name'] == query]
+
+            for pgx_label in ['PostgreSQL', 'pgx-lower']:
+                subset = query_data[query_data['pgx_label'] == pgx_label]['memory_peak_mb']
+                if len(subset) > 0:
+                    percentiles = np.percentile(subset, [0, 25, 50, 75, 100])
+                    mean = np.mean(subset)
+                    std = np.std(subset)
+                    cv = (std / mean * 100) if mean != 0 else 0
+                    text = f"  {query} ({pgx_label}): 0%={percentiles[0]:.2f}, 25%={percentiles[1]:.2f}, 50%={percentiles[2]:.2f}, 75%={percentiles[3]:.2f}, 100%={percentiles[4]:.2f}, CV={cv:.2f}%"
+                    fig.text(0.08, y_pos, text, fontsize=9, family='monospace')
+                    y_pos -= line_height
+
+        # Aggregate statistics
+        fig.text(0.08, y_pos, "AGGREGATE:", fontsize=10, fontweight='bold')
+        y_pos -= line_height
+
+        for pgx_label in ['PostgreSQL', 'pgx-lower']:
+            subset = label_data[label_data['pgx_label'] == pgx_label]['memory_peak_mb']
+            if len(subset) > 0:
+                percentiles = np.percentile(subset, [0, 25, 50, 75, 100])
+                mean = np.mean(subset)
+                std = np.std(subset)
+                cv = (std / mean * 100) if mean != 0 else 0
+                text = f"  {pgx_label}: 0%={percentiles[0]:.2f}, 25%={percentiles[1]:.2f}, 50%={percentiles[2]:.2f}, 75%={percentiles[3]:.2f}, 100%={percentiles[4]:.2f}, CV={cv:.2f}%"
+                fig.text(0.08, y_pos, text, fontsize=9, family='monospace', fontweight='bold')
+                y_pos -= line_height
+
+        y_pos -= line_height * 0.5
+
+        if y_pos < 0.1:
+            pdf.savefig(fig, bbox_inches='tight')
+            plt.close(fig)
+            fig = plt.figure(figsize=(11, 8.5))
+            fig.suptitle('Memory Usage Statistics (MB) - Continued', fontsize=16, fontweight='bold', y=0.98)
+            ax = fig.add_subplot(111)
+            ax.axis('off')
+            y_pos = 0.95
+
+    pdf.savefig(fig, bbox_inches='tight')
+    plt.close(fig)
+
+def create_perf_statistics_page(pdf, df):
+    """Create performance statistics page for branch miss, LLC miss, etc."""
+    metrics = [
+        ('ipc', 'IPC (Instructions Per Cycle)'),
+        ('llc_miss_rate', 'LLC Miss Rate (%)'),
+        ('branch_miss_rate', 'Branch Miss Rate (%)'),
+        ('branches', 'Number of Branches')
+    ]
+
+    for metric_col, metric_title in metrics:
+        fig = plt.figure(figsize=(11, 8.5))
+        fig.suptitle(f'{metric_title} Statistics', fontsize=16, fontweight='bold', y=0.98)
+
+        ax = fig.add_subplot(111)
+        ax.axis('off')
+
+        y_pos = 0.95
+        line_height = 0.04
+
+        for label in reorder_labels(df['label'].unique()):
+            label_data = df[df['label'] == label]
+
+            # Add label header
+            fig.text(0.05, y_pos, f"{label}", fontsize=12, fontweight='bold')
+            y_pos -= line_height * 1.5
+
+            # Per-query statistics
+            for query in sorted(label_data['query_name'].unique()):
+                query_data = label_data[label_data['query_name'] == query]
+
+                for pgx_label in ['PostgreSQL', 'pgx-lower']:
+                    subset = query_data[query_data['pgx_label'] == pgx_label][metric_col]
+                    if len(subset) > 0:
+                        percentiles = np.percentile(subset, [0, 25, 50, 75, 100])
+                        mean = np.mean(subset)
+                        std = np.std(subset)
+                        cv = (std / mean * 100) if mean != 0 else 0
+                        text = f"  {query} ({pgx_label}): 0%={percentiles[0]:.2f}, 25%={percentiles[1]:.2f}, 50%={percentiles[2]:.2f}, 75%={percentiles[3]:.2f}, 100%={percentiles[4]:.2f}, CV={cv:.2f}%"
+                        fig.text(0.08, y_pos, text, fontsize=9, family='monospace')
+                        y_pos -= line_height
+
+            # Aggregate statistics
+            fig.text(0.08, y_pos, "AGGREGATE:", fontsize=10, fontweight='bold')
+            y_pos -= line_height
+
+            for pgx_label in ['PostgreSQL', 'pgx-lower']:
+                subset = label_data[label_data['pgx_label'] == pgx_label][metric_col]
+                if len(subset) > 0:
+                    percentiles = np.percentile(subset, [0, 25, 50, 75, 100])
+                    mean = np.mean(subset)
+                    std = np.std(subset)
+                    cv = (std / mean * 100) if mean != 0 else 0
+                    text = f"  {pgx_label}: 0%={percentiles[0]:.2f}, 25%={percentiles[1]:.2f}, 50%={percentiles[2]:.2f}, 75%={percentiles[3]:.2f}, 100%={percentiles[4]:.2f}, CV={cv:.2f}%"
+                    fig.text(0.08, y_pos, text, fontsize=9, family='monospace', fontweight='bold')
+                    y_pos -= line_height
+
+            y_pos -= line_height * 0.5
+
+            if y_pos < 0.1:
+                pdf.savefig(fig, bbox_inches='tight')
+                plt.close(fig)
+                fig = plt.figure(figsize=(11, 8.5))
+                fig.suptitle(f'{metric_title} Statistics - Continued', fontsize=16, fontweight='bold', y=0.98)
+                ax = fig.add_subplot(111)
+                ax.axis('off')
+                y_pos = 0.95
+
+        pdf.savefig(fig, bbox_inches='tight')
+        plt.close(fig)
 
 def main():
     print("Loading benchmark data...")
@@ -540,6 +749,9 @@ def main():
 
         print("Generating branches_plots.pdf...")
         create_branches_plot_pdf(perf_df)
+
+        print("\nGenerating mine_statistics.pdf...")
+        create_statistics_pdf(df, perf_df)
     except Exception as e:
         print(f"Warning: Could not load performance stats: {e}")
 
