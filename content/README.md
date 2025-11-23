@@ -15,4 +15,7 @@ Typically databases use a volcano execution model, which parses your SQL into a 
 Each node represents a function, and then an iterator is created where you can call `node.next()` for the next tuple value.
 
 Read more at:
-* [The development blog post](https://pgx.zyros.dev/blog), which walks through interesting subproblems I encountered more casually.
+* [Presentation Slides B](https://pgx.zyros.dev/api/download/Thesis_B_Anonymous.pdf)
+* [Presentation Slides C](https://pgx.zyros.dev/api/download/Thesis_C_Anonymous.pdf)
+* [GitHub Repository](https://github.com/zyros-dev/pgx-lower) - Full codebase
+* Thesis text will be uploaded mid-December or later

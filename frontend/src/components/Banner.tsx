@@ -25,12 +25,11 @@ const Banner: React.FC = () => {
         <div className="banner-logo">
           <Link to="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <img src="/logo192.png" alt="pgx-lower logo" className="banner-icon" />
-            <h1>pgx-lower {version && <span className="version">v{version}</span>}</h1>
+            <h1>pgx-lower: Productionising Database Compiler Research {version && <span className="version">v{version}</span>}</h1>
           </Link>
         </div>
         <div className="banner-links">
           <Link to="/">About</Link>
-          <Link to="/blog">Blog</Link>
           <Link to="/query">Query</Link>
         </div>
       </div>
