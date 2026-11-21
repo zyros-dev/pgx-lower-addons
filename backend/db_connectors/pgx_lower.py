@@ -31,7 +31,7 @@ class PgxLowerConnector(DatabaseConnector):
             self.conn = None
 
     async def get_version(self) -> str:
-        if not self.conn:
+        if not self.conn or self.conn.is_closed():
             await self.connect()
 
         pg_version = await self.conn.fetchval("SELECT version()")
@@ -46,7 +46,7 @@ class PgxLowerConnector(DatabaseConnector):
         pass
 
     async def _execute_query(self, query: str) -> List[QueryOutput]:
-        if not self.conn:
+        if not self.conn or self.conn.is_closed():
             await self.connect()
 
         outputs = []

@@ -28,7 +28,7 @@ class PgxLowerQueryExecutor:
         self.conn = None
     
     async def connect(self) -> None:
-        if self.conn:
+        if self.conn and not self.conn.is_closed():
             return
 
         self.conn = await asyncpg.connect(
@@ -87,7 +87,7 @@ class PgxLowerQueryExecutor:
         query: str,
         database: str = "postgres"
     ) -> Dict[str, Any]:
-        if not self.conn:
+        if not self.conn or self.conn.is_closed():
             await self.connect()
 
         query_upper = query.strip().upper()
