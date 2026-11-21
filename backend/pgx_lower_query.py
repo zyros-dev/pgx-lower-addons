@@ -26,7 +26,50 @@ class PgxLowerQueryExecutor:
         self.container_name = container_name
         self.use_docker_exec = use_docker_exec
         self.conn = None
-    
+        # The pgx_lower extension leaks ~0.6MB of malloc heap per compiled query inside the backend process and never
+        # frees it, so one long-lived session grows until the container is OOM-killed (T126). Recycle the session
+        # after a bounded number of queries / age; the leaked memory is returned when that backend process exits.
+        self.max_queries_per_conn = int(os.getenv("PGX_LOWER_MAX_QUERIES_PER_CONN", "50"))
+        self.max_conn_age_s = float(os.getenv("PGX_LOWER_MAX_CONN_AGE_S", "900"))
+        self.conn_queries = 0
+        self.conn_opened_at = 0.0
+        self._acquire_lock = asyncio.Lock()
+        self._busy: Dict[Any, int] = {}
+        self._retired: set = set()
+
+    async def _acquire(self):
+        """Return an open connection for one query, recycling the current one once it has served its budget."""
+        async with self._acquire_lock:
+            worn = (self.conn is not None and not self.conn.is_closed()
+                    and (self.conn_queries >= self.max_queries_per_conn
+                         or time.monotonic() - self.conn_opened_at >= self.max_conn_age_s))
+            if worn:
+                old, self.conn = self.conn, None
+                self._retired.add(old)
+                await self._close_if_idle(old)
+            if not self.conn or self.conn.is_closed():
+                await self.connect()
+            conn = self.conn
+            self.conn_queries += 1
+            self._busy[conn] = self._busy.get(conn, 0) + 1
+            return conn
+
+    async def _release(self, conn) -> None:
+        self._busy[conn] = self._busy.get(conn, 1) - 1
+        await self._close_if_idle(conn)
+
+    async def _close_if_idle(self, conn) -> None:
+        """Close a retired connection once no query is running on it."""
+        if conn not in self._retired or self._busy.get(conn, 0) > 0:
+            return
+        self._retired.discard(conn)
+        self._busy.pop(conn, None)
+        try:
+            await conn.close(timeout=5)
+        except Exception:
+            conn.terminate()
+        logger.info("Recycled pgx-lower session")
+
     async def connect(self) -> None:
         if self.conn and not self.conn.is_closed():
             return
@@ -39,6 +82,8 @@ class PgxLowerQueryExecutor:
             database="postgres",
             timeout=10
         )
+        self.conn_queries = 0
+        self.conn_opened_at = time.monotonic()
         logger.info(f"Connected to pgx-lower at {self.host}:{self.port}")
 
     async def disconnect(self) -> None:
@@ -87,9 +132,6 @@ class PgxLowerQueryExecutor:
         query: str,
         database: str = "postgres"
     ) -> Dict[str, Any]:
-        if not self.conn or self.conn.is_closed():
-            await self.connect()
-
         query_upper = query.strip().upper()
         if any(op in query_upper for op in ["INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER"]):
             raise ValueError("Query contains write operations - only SELECT queries are allowed")
@@ -98,25 +140,26 @@ class PgxLowerQueryExecutor:
         removed = IRExtractor.cleanup_all_ir_files()
         logger.debug(f"Cleaned {removed} old IR files")
 
+        conn = await self._acquire()
         start_time = time.time()
 
         try:
             try:
-                await self.conn.execute("LOAD 'pgx_lower.so'")
+                await conn.execute("LOAD 'pgx_lower.so'")
             except asyncpg.PostgresError as e:
                 if "already loaded" not in str(e):
                     logger.warning(f"Failed to load extension: {e}")
 
             try:
-                await self.conn.execute("SET pgx_lower.log_enable = true")
-                await self.conn.execute(
+                await conn.execute("SET pgx_lower.log_enable = true")
+                await conn.execute(
                     "SET pgx_lower.enabled_categories = 'AST_TRANSLATE,RELALG_LOWER,DB_LOWER,JIT'"
                 )
             except asyncpg.PostgresError:
                 logger.debug("Could not set pgx_lower logging parameters")
 
             logger.debug(f"Executing query: {query[:100]}...")
-            results = await self.conn.fetch(query)
+            results = await conn.fetch(query)
 
             elapsed_ms = int((time.time() - start_time) * 1000)
 
@@ -159,6 +202,7 @@ class PgxLowerQueryExecutor:
             }
 
         finally:
+            await self._release(conn)
             removed = IRExtractor.cleanup_all_ir_files()
             logger.debug(f"Cleaned up {removed} IR files")
 
