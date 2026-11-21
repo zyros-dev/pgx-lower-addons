@@ -45,7 +45,7 @@ class PgxLowerIRConnector(DatabaseConnector):
             self.conn = None
 
     async def get_version(self) -> str:
-        if not self.conn:
+        if not self.conn or self.conn.is_closed():
             await self.connect()
 
         pg_version = await self.conn.fetchval("SELECT version()")
@@ -97,7 +97,7 @@ class PgxLowerIRConnector(DatabaseConnector):
         return ir_files
 
     async def _execute_query(self, query: str) -> List[QueryOutput]:
-        if not self.conn:
+        if not self.conn or self.conn.is_closed():
             await self.connect()
 
         outputs = []
@@ -148,7 +148,7 @@ class PgxLowerIRConnector(DatabaseConnector):
         if not self.validate_readonly_query(query):
             raise ValueError("Query contains write operations and is not allowed")
 
-        if not self.conn:
+        if not self.conn or self.conn.is_closed():
             await self.connect()
 
         IRExtractor.ensure_ir_directory()
