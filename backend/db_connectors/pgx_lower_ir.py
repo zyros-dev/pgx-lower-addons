@@ -27,6 +27,13 @@ class PgxLowerIRConnector(DatabaseConnector):
             database=database
         )
         self.conn = None
+        self.conn_queries = 0
+        self.conn_opened_at = 0.0
+        # The pgx_lower extension leaks ~0.6MB of malloc heap per compiled query inside the backend process and
+        # never frees it, so one long-lived session grows until the container is OOM-killed (T126). Recycle the
+        # session after a bounded number of queries / age so the leaked memory is returned when the backend exits.
+        self.max_queries_per_conn = int(os.getenv("PGX_LOWER_MAX_QUERIES_PER_CONN", "50"))
+        self.max_conn_age_s = float(os.getenv("PGX_LOWER_MAX_CONN_AGE_S", "900"))
         self.container_name = container_name
         self.use_docker_exec = os.getenv("USE_DOCKER_EXEC", "false").lower() == "true"
 
@@ -38,6 +45,25 @@ class PgxLowerIRConnector(DatabaseConnector):
             password=self.password,
             database=self.database
         )
+        self.conn_queries = 0
+        self.conn_opened_at = time.monotonic()
+
+    async def _ensure_fresh_connection(self):
+        """Reconnect when the connection is closed, or recycle it once it has served its query/age budget."""
+        if self.conn and not self.conn.is_closed():
+            worn = (self.conn_queries >= self.max_queries_per_conn
+                    or time.monotonic() - self.conn_opened_at >= self.max_conn_age_s)
+            if not worn:
+                return
+            old = self.conn
+            await self.connect()
+            # Close the worn session under the query lock so a query still running on it finishes first.
+            try:
+                await self.query_lock.execute_with_lock(old.close(timeout=5))
+            except Exception:
+                old.terminate()
+            return
+        await self.connect()
 
     async def disconnect(self):
         if self.conn:
@@ -148,8 +174,8 @@ class PgxLowerIRConnector(DatabaseConnector):
         if not self.validate_readonly_query(query):
             raise ValueError("Query contains write operations and is not allowed")
 
-        if not self.conn or self.conn.is_closed():
-            await self.connect()
+        await self._ensure_fresh_connection()
+        self.conn_queries += 1
 
         IRExtractor.ensure_ir_directory()
 
